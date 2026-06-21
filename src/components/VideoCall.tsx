@@ -24,30 +24,38 @@ const servers = {
 interface VideoCallProps {
   chatId: string;
   isInitiator: boolean;
+  isVideoCall: boolean;
+  userId: string;
   onEndCall: () => void;
 }
 
-export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
+export function VideoCall({ chatId, isInitiator, isVideoCall, userId, onEndCall }: VideoCallProps) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(isVideoCall);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const pc = useRef<RTCPeerConnection | null>(null);
 
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement & HTMLAudioElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement & HTMLAudioElement>(null);
 
   useEffect(() => {
     let unsubs: (() => void)[] = [];
     let currentLocalStream: MediaStream | null = null;
     let peerConnection: RTCPeerConnection | null = null;
+    let isUnmounted = false;
 
     const setupMedia = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: isVideoCall,
           audio: true,
         });
+        if (isUnmounted) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        
         currentLocalStream = stream;
         setLocalStream(stream);
 
@@ -62,9 +70,12 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
           if (event.streams && event.streams[0]) {
             setRemoteStream(event.streams[0]);
           } else {
-            const newStream = new MediaStream();
-            newStream.addTrack(event.track);
-            setRemoteStream(newStream);
+            setRemoteStream(prev => {
+              const stream = prev || new MediaStream();
+              stream.addTrack(event.track);
+              // Force re-render to ensure video element picks it up if it was empty
+              return new MediaStream(stream.getTracks());
+            });
           }
         };
 
@@ -73,13 +84,12 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
         const answerCandidates = collection(callDoc, "answerCandidates");
 
         if (isInitiator) {
-          // Clear old candidates
-          import("firebase/firestore").then(async ({ getDocs }) => {
-            const oldOffers = await getDocs(offerCandidates);
-            oldOffers.forEach((d) => deleteDoc(d.ref));
-            const oldAnswers = await getDocs(answerCandidates);
-            oldAnswers.forEach((d) => deleteDoc(d.ref));
-          });
+          // Clear old candidates synchronously before doing WebRTC stuff
+          const { getDocs } = await import("firebase/firestore");
+          const oldOffers = await getDocs(offerCandidates);
+          oldOffers.forEach((d) => deleteDoc(d.ref));
+          const oldAnswers = await getDocs(answerCandidates);
+          oldAnswers.forEach((d) => deleteDoc(d.ref));
         }
 
         peerConnection.onicecandidate = (event) => {
@@ -98,7 +108,9 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
           await setDoc(callDoc, {
             offer: { type: offerDescription.type, sdp: offerDescription.sdp },
             isActive: true,
-          });
+            isVideo: isVideoCall,
+            initiator: userId,
+          }, { merge: true });
 
           const unsubCall = onSnapshot(callDoc, async (snapshot) => {
             const data = snapshot.data();
@@ -165,6 +177,7 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
     unsubs.push(unsubEnd);
 
     return () => {
+      isUnmounted = true;
       unsubs.forEach((u) => u());
       currentLocalStream?.getTracks().forEach((t) => t.stop());
       peerConnection?.close();
@@ -216,8 +229,13 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${isVideoCall ? "" : "hidden"}`}
           />
+          {!isVideoCall && (
+            <div className="w-32 h-32 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl">
+                 <Mic className="w-12 h-12 text-indigo-400 animate-pulse" />
+            </div>
+          )}
           <div className="absolute bottom-4 left-4 text-xs font-bold bg-black/50 px-3 py-1.5 rounded-full text-white backdrop-blur">
             Remote Peer
           </div>
@@ -229,8 +247,13 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
             autoPlay
             playsInline
             muted
-            className="w-full h-full object-cover transform -scale-x-100" // Mirror local video
+            className={`w-full h-full object-cover transform -scale-x-100 ${isVideoCall ? "" : "hidden"}`}
           />
+          {!isVideoCall && (
+            <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl">
+              {isAudioEnabled ? <Mic className="w-8 h-8 text-indigo-400" /> : <MicOff className="w-8 h-8 text-red-400" />}
+            </div>
+          )}
           <div className="absolute bottom-4 left-4 text-xs font-bold bg-black/50 px-3 py-1.5 rounded-full text-zinc-300 backdrop-blur">
             You
           </div>
@@ -258,20 +281,22 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
         >
           <PhoneOff className="w-6 h-6" />
         </button>
-        <button
-          onClick={toggleVideo}
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg ${
-            isVideoEnabled
-              ? "bg-white/10 hover:bg-white/20 text-white"
-              : "bg-red-500/20 text-red-500 border border-red-500/20"
-          }`}
-        >
-          {isVideoEnabled ? (
-            <Video className="w-6 h-6" />
-          ) : (
-            <VideoOff className="w-6 h-6" />
-          )}
-        </button>
+        {isVideoCall && (
+          <button
+            onClick={toggleVideo}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg ${
+              isVideoEnabled
+                ? "bg-white/10 hover:bg-white/20 text-white"
+                : "bg-red-500/20 text-red-500 border border-red-500/20"
+            }`}
+          >
+            {isVideoEnabled ? (
+              <Video className="w-6 h-6" />
+            ) : (
+              <VideoOff className="w-6 h-6" />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

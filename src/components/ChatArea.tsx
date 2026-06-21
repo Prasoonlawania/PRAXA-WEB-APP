@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { User as FirebaseUser } from "firebase/auth";
+import imageCompression from "browser-image-compression";
 import { db, storage } from "../lib/firebase";
 import { OperationType, handleFirestoreError, cn } from "../lib/utils";
 import {
@@ -54,6 +55,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
   const [isInCall, setIsInCall] = useState(false);
   const [isInitiator, setIsInitiator] = useState(false);
   const [incomingCall, setIncomingCall] = useState(false);
+  const [isVideoCallType, setIsVideoCallType] = useState(true);
 
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
@@ -111,10 +113,10 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data.isActive && !isInCall) {
-          // We are not in the call currently, and someone started one.
-          // However wait! If we started the call, we ALREADY set isInCall=true and isInitiator=true.
-          // But just in case:
-          setIncomingCall(true);
+          if (data.initiator !== user.uid) {
+            setIsVideoCallType(!!data.isVideo);
+            setIncomingCall(true);
+          }
         } else if (!data.isActive) {
           setIncomingCall(false);
           setIsInCall(false);
@@ -191,14 +193,31 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
     setInputText(forwardText);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let file = e.target.files?.[0];
     if (!file || !activeChat) return;
 
     // Warn user about very large files over 5GB (browser limit may hit first, but we handle it)
     if (file.size > 5 * 1024 * 1024 * 1024) {
       alert("File is too large! Maximum size is 5GB.");
       return;
+    }
+
+    const originalName = file.name;
+    const originalType = file.type;
+
+    if (file.type.startsWith("image/")) {
+      try {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1280,
+          useWebWorker: true
+        };
+        const compressed = await imageCompression(file, options);
+        file = new File([compressed], originalName, { type: compressed.type || originalType });
+      } catch (error) {
+        console.error("Error compressing image:", error);
+      }
     }
 
     setUploadingFile(file);
@@ -240,7 +259,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
           type,
           createdAt: Date.now(),
           fileUrl: downloadURL,
-          fileName: file.name,
+          fileName: file.name || originalName || "upload",
           fileSize: file.size,
         };
 
@@ -345,7 +364,8 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
   const isOnline =
     activeChat.type === "direct" ? activeChat.otherUser?.isOnline : false;
 
-  const startCall = () => {
+  const startCall = (video: boolean) => {
+    setIsVideoCallType(video);
     setIsInitiator(true);
     setIsInCall(true);
   };
@@ -362,6 +382,8 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
         <VideoCall
           chatId={activeChat.id}
           isInitiator={isInitiator}
+          isVideoCall={isVideoCallType}
+          userId={user.uid}
           onEndCall={() => {
             setIsInCall(false);
             setIncomingCall(false);
@@ -373,10 +395,10 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 bg-zinc-900 border border-indigo-500/30 p-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-top-4 fade-in">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center animate-pulse">
-              <Video className="w-6 h-6 text-indigo-400" />
+              {isVideoCallType ? <Video className="w-6 h-6 text-indigo-400" /> : <Phone className="w-6 h-6 text-indigo-400" />}
             </div>
             <div>
-              <p className="font-bold text-white">Incoming Video Call</p>
+              <p className="font-bold text-white">Incoming {isVideoCallType ? "Video" : "Voice"} Call</p>
               <p className="text-sm text-zinc-400">{displayName}</p>
             </div>
           </div>
@@ -434,11 +456,18 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
 
         <div className="flex gap-4">
           <button
-            onClick={startCall}
-            className="px-4 py-2 bg-indigo-600 rounded-lg text-sm font-semibold hover:bg-indigo-500 transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/20 text-white"
+            onClick={() => startCall(false)}
+            className="p-2 text-slate-400 hover:text-white transition-colors bg-white/5 rounded-lg hover:bg-white/10"
+            title="Voice Call"
           >
-            <Video className="w-4 h-4" />
-            Video Call
+            <Phone className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => startCall(true)}
+            className="p-2 text-slate-400 hover:text-white transition-colors bg-white/5 rounded-lg hover:bg-white/10"
+            title="Video Call"
+          >
+            <Video className="w-5 h-5" />
           </button>
           {isSelectMode && selectedMessages.size > 0 && (
             <button 
@@ -457,16 +486,9 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
             className={cn("p-2 text-slate-400 hover:text-white transition-colors rounded-lg", 
               isSelectMode ? "bg-indigo-500/20 text-indigo-400" : "bg-white/5 hover:bg-white/10"
             )}
-            title="Select Mode"
+            title="Select Messages"
           >
             <CheckCircle className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={handleDeleteChat}
-            className="p-2 text-red-400 hover:text-white transition-colors bg-white/5 rounded-lg hover:bg-red-500/80" 
-            title="Delete Chat"
-          >
-            <Trash2 className="w-5 h-5" />
           </button>
         </div>
       </div>
