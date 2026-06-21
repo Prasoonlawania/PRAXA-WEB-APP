@@ -180,6 +180,31 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
             </div>
           </div>
 
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">System</h3>
+            <div className="flex gap-2 relative items-center justify-between bg-white/5 border border-white/10 rounded-xl p-3">
+              <span className="text-sm text-slate-300">Push Notifications</span>
+              <button 
+                onClick={() => {
+                  if ('Notification' in window) {
+                    Notification.requestPermission().then(perm => {
+                      if (perm === 'granted') {
+                        new Notification('Notifications Enabled', { body: 'You will now receive message alerts' });
+                      } else {
+                        alert('Notification permission denied. Please enable them in your browser settings.');
+                      }
+                    });
+                  } else {
+                    alert('Notifications are not supported by your browser.');
+                  }
+                }}
+                className="px-4 py-1.5 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 font-medium rounded-lg text-sm transition-colors"
+               >
+                Enable
+              </button>
+            </div>
+          </div>
+
           <div className="pt-4 flex justify-end">
              <button 
                 onClick={onClose}
