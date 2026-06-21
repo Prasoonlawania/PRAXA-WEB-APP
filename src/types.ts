@@ -24,7 +24,7 @@ export interface Chat {
   
   // Local state properties for the UI
   otherUser?: User;
-  lastMessageContent?: string;
+  unreadCounts?: Record<string, number>;
 }
 
 export interface Message {

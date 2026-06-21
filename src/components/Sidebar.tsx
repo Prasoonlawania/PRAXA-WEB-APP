@@ -351,7 +351,14 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
                             {chat.updatedAt ? formatDistanceToNow(chat.updatedAt, { addSuffix: true }) : ''}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 truncate">{chat.lastMessageContent || 'No messages yet'}</p>
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs text-slate-400 truncate pr-2">{chat.lastMessageContent || 'No messages yet'}</p>
+                          {chat.unreadCounts?.[user.uid] > 0 && chat.id !== activeChat?.id && (
+                            <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                              {chat.unreadCounts[user.uid]}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </button>
                   </div>

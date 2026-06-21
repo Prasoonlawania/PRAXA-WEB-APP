@@ -10,6 +10,7 @@ import {
   limit,
   updateDoc,
   deleteDoc,
+  increment,
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { User as FirebaseUser } from "firebase/auth";
@@ -131,6 +132,13 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
               status: 'read'
             }).catch(console.error);
           });
+        }
+        
+        // Reset unread count for this user if it's > 0
+        if (activeChat.unreadCounts?.[user.uid]) {
+          updateDoc(doc(db, "chats", activeChat.id), {
+            [`unreadCounts.${user.uid}`]: 0
+          }).catch(console.error);
         }
       },
       (error) => {
@@ -367,12 +375,16 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
             doc(db, "chats", activeChat!.id, "messages", messageId),
             newMessage,
           );
-          await updateDoc(doc(db, "chats", activeChat!.id), {
+          const updates: Record<string, any> = {
             lastMessageId: messageId,
             lastMessageContent: `📷 ${type === "image" ? "Image" : type === "video" ? "Video" : type === "audio" ? "Audio" : "File"}`,
             lastSenderId: user.uid,
             updatedAt: Date.now(),
+          };
+          activeChat!.participants?.forEach(p => {
+            if (p !== user.uid) updates[`unreadCounts.${p}`] = increment(1);
           });
+          await updateDoc(doc(db, "chats", activeChat!.id), updates);
         } catch (error) {
            console.error(error);
            alert("Failed to send file message.");
@@ -444,12 +456,21 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
 
       // Update chat last message
       const chatRef = doc(db, "chats", activeChat.id);
-      await updateDoc(chatRef, {
+      
+      const updates: Record<string, any> = {
         lastMessageId: messageId,
         lastMessageContent: messageContent,
         lastSenderId: user.uid,
         updatedAt: Date.now(),
+      };
+      
+      activeChat.participants?.forEach(p => {
+        if (p !== user.uid) {
+          updates[`unreadCounts.${p}`] = increment(1);
+        }
       });
+      
+      await updateDoc(chatRef, updates);
     } catch (error) {
       handleFirestoreError(
         error,

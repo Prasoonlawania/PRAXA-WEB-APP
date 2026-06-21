@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Praxa AI Chat</string>
+    <string name="title_activity_main">Praxa AI Chat</string>
+    <string name="package_name">com.praxa.ai.chat</string>
+    <string name="custom_url_scheme">com.praxa.ai.chat</string>
+</resources>
