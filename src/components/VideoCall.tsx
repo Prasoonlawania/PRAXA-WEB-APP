@@ -39,6 +39,8 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
 
   useEffect(() => {
     let unsubs: (() => void)[] = [];
+    let currentLocalStream: MediaStream | null = null;
+    let peerConnection: RTCPeerConnection | null = null;
 
     const setupMedia = async () => {
       try {
@@ -46,28 +48,41 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
           video: true,
           audio: true,
         });
+        currentLocalStream = stream;
         setLocalStream(stream);
 
-        const remote = new MediaStream();
-        setRemoteStream(remote);
-
-        pc.current = new RTCPeerConnection(servers);
+        peerConnection = new RTCPeerConnection(servers);
+        pc.current = peerConnection;
 
         stream.getTracks().forEach((track) => {
-          pc.current?.addTrack(track, stream);
+          peerConnection?.addTrack(track, stream);
         });
 
-        pc.current.ontrack = (event) => {
-          event.streams[0].getTracks().forEach((track) => {
-            remote.addTrack(track);
-          });
+        peerConnection.ontrack = (event) => {
+          if (event.streams && event.streams[0]) {
+            setRemoteStream(event.streams[0]);
+          } else {
+            const newStream = new MediaStream();
+            newStream.addTrack(event.track);
+            setRemoteStream(newStream);
+          }
         };
 
         const callDoc = doc(db, `chats/${chatId}/calls/active`);
         const offerCandidates = collection(callDoc, "offerCandidates");
         const answerCandidates = collection(callDoc, "answerCandidates");
 
-        pc.current.onicecandidate = (event) => {
+        if (isInitiator) {
+          // Clear old candidates
+          import("firebase/firestore").then(async ({ getDocs }) => {
+            const oldOffers = await getDocs(offerCandidates);
+            oldOffers.forEach((d) => deleteDoc(d.ref));
+            const oldAnswers = await getDocs(answerCandidates);
+            oldAnswers.forEach((d) => deleteDoc(d.ref));
+          });
+        }
+
+        peerConnection.onicecandidate = (event) => {
           if (event.candidate) {
             addDoc(
               isInitiator ? offerCandidates : answerCandidates,
@@ -77,43 +92,43 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
         };
 
         if (isInitiator) {
-          const offerDescription = await pc.current.createOffer();
-          await pc.current.setLocalDescription(offerDescription);
+          const offerDescription = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offerDescription);
 
           await setDoc(callDoc, {
             offer: { type: offerDescription.type, sdp: offerDescription.sdp },
             isActive: true,
           });
 
-          const unsubCall = onSnapshot(callDoc, (snapshot) => {
+          const unsubCall = onSnapshot(callDoc, async (snapshot) => {
             const data = snapshot.data();
-            if (!pc.current?.currentRemoteDescription && data?.answer) {
+            if (!peerConnection?.currentRemoteDescription && data?.answer) {
               const answerDescription = new RTCSessionDescription(data.answer);
-              pc.current?.setRemoteDescription(answerDescription);
+              await peerConnection?.setRemoteDescription(answerDescription);
+
+              const unsubAnsIce = onSnapshot(answerCandidates, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                  if (change.type === "added") {
+                    const candidate = new RTCIceCandidate(change.doc.data());
+                    peerConnection?.addIceCandidate(candidate).catch((e) => console.error(e));
+                  }
+                });
+              });
+              unsubs.push(unsubAnsIce);
             }
           });
           unsubs.push(unsubCall);
-
-          const unsubAnsIce = onSnapshot(answerCandidates, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-              if (change.type === "added") {
-                const candidate = new RTCIceCandidate(change.doc.data());
-                pc.current?.addIceCandidate(candidate);
-              }
-            });
-          });
-          unsubs.push(unsubAnsIce);
         } else {
           // Joining call
           const callData = (await getDoc(callDoc)).data();
           if (callData?.offer) {
             const offerDescription = callData.offer;
-            await pc.current.setRemoteDescription(
+            await peerConnection.setRemoteDescription(
               new RTCSessionDescription(offerDescription),
             );
 
-            const answerDescription = await pc.current.createAnswer();
-            await pc.current.setLocalDescription(answerDescription);
+            const answerDescription = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answerDescription);
 
             await updateDoc(callDoc, {
               answer: {
@@ -126,7 +141,7 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
               snapshot.docChanges().forEach((change) => {
                 if (change.type === "added") {
                   const candidate = new RTCIceCandidate(change.doc.data());
-                  pc.current?.addIceCandidate(candidate);
+                  peerConnection?.addIceCandidate(candidate).catch((e) => console.error(e));
                 }
               });
             });
@@ -151,8 +166,8 @@ export function VideoCall({ chatId, isInitiator, onEndCall }: VideoCallProps) {
 
     return () => {
       unsubs.forEach((u) => u());
-      localStream?.getTracks().forEach((t) => t.stop());
-      pc.current?.close();
+      currentLocalStream?.getTracks().forEach((t) => t.stop());
+      peerConnection?.close();
     };
   }, [chatId, isInitiator]);
 

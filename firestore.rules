@@ -81,6 +81,10 @@ service cloud.firestore {
         isValidChat(incoming()) &&
         request.auth.uid in existing().participants &&
         incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() &&
+        isValidId(chatId) &&
+        request.auth.uid in existing().participants;
     }
 
     // Validation for Message
@@ -132,6 +136,12 @@ service cloud.firestore {
              incoming().diff(existing()).affectedKeys().hasOnly(['starredBy'])
           )
         );
+
+      allow delete: if isSignedIn() &&
+        isValidId(chatId) &&
+        isValidId(messageId) &&
+        isChatParticipant(chatId) &&
+        existing().senderId == request.auth.uid;
     }
     
     match /chats/{chatId}/calls/{document=**} {
