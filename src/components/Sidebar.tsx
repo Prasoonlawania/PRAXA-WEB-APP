@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, getDocs, setDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { db, logout } from '../lib/firebase';
 import { OperationType, handleFirestoreError, cn } from '../lib/utils';
-import { Search, Plus, MessageSquare, LogOut, Settings } from 'lucide-react';
+import { Settings, Search, Plus, MessageSquare, LogOut, Trash2, CheckCircle } from 'lucide-react';
 import type { Chat, User } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -11,13 +11,17 @@ interface SidebarProps {
   user: FirebaseUser;
   activeChat: Chat | null;
   setActiveChat: (chat: Chat | null) => void;
+  onOpenSettings?: () => void;
 }
 
-export function Sidebar({ user, activeChat, setActiveChat }: SidebarProps) {
+export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: SidebarProps) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedChats, setSelectedChats] = useState<Set<string>>(new Set());
 
   // Load user's chats
   useEffect(() => {
@@ -121,8 +125,40 @@ export function Sidebar({ user, activeChat, setActiveChat }: SidebarProps) {
     }
   };
 
+  const toggleChatSelection = (chatId: string) => {
+    const newSelection = new Set(selectedChats);
+    if (newSelection.has(chatId)) {
+      newSelection.delete(chatId);
+    } else {
+      newSelection.add(chatId);
+    }
+    setSelectedChats(newSelection);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedChats.size === 0) return;
+    const confirm = window.confirm(`Are you sure you want to delete ${selectedChats.size} chat(s)?`);
+    if (!confirm) return;
+
+    const promises = Array.from(selectedChats).map((chatId: string) => 
+      deleteDoc(doc(db, "chats", chatId))
+    );
+    try {
+      await Promise.all(promises);
+      setSelectedChats(new Set());
+      setIsSelectMode(false);
+      
+      // If active chat was deleted, clear it
+      if (activeChat && selectedChats.has(activeChat.id)) {
+        setActiveChat(null);
+      }
+    } catch (e) {
+      console.error("Error bulk deleting chats:", e);
+    }
+  };
+
   return (
-    <div className="w-80 lg:w-96 border-r border-white/5 flex flex-col bg-[#0F0F12] shrink-0">
+    <div className="w-80 lg:w-96 border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-md shrink-0">
       {/* Header */}
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -139,8 +175,36 @@ export function Sidebar({ user, activeChat, setActiveChat }: SidebarProps) {
           </div>
         </div>
         <div className="flex gap-2">
+          {isSelectMode && selectedChats.size > 0 && (
+            <button 
+              onClick={handleBulkDelete}
+              className="p-2 bg-red-600/20 text-red-500 hover:bg-red-600/30 rounded-lg transition-colors"
+              title="Delete Selected Chats"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+          <button 
+            onClick={() => {
+              setIsSelectMode(!isSelectMode);
+              setSelectedChats(new Set());
+            }}
+            className={cn("p-2 rounded-lg transition-colors",
+               isSelectMode ? "bg-indigo-500/20 text-indigo-400" : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+            )}
+            title="Select Chats"
+          >
+            <CheckCircle className="w-5 h-5" />
+          </button>
           <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
             <Plus className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={onOpenSettings}
+            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
+            title="Settings"
+          >
+            <Settings className="w-5 h-5" />
           </button>
           <button onClick={logout} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
             <LogOut className="w-5 h-5" />
@@ -205,33 +269,42 @@ export function Sidebar({ user, activeChat, setActiveChat }: SidebarProps) {
                 const initials = displayName?.[0] || 'C';
 
                 return (
-                  <button
-                    key={chat.id}
-                    onClick={() => setActiveChat(chat)}
-                    className={cn(
-                      "w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3 border border-transparent",
-                      activeChat?.id === chat.id 
-                        ? "bg-indigo-500/10 border-indigo-500/20" 
-                        : "hover:bg-white/5"
+                  <div key={chat.id} className="relative flex items-center gap-2 group">
+                    {isSelectMode && (
+                      <input 
+                        type="checkbox"
+                        className="w-5 h-5 ml-2 rounded border-white/20 bg-[#16161D] checked:bg-indigo-500 cursor-pointer"
+                        checked={selectedChats.has(chat.id)}
+                        onChange={() => toggleChatSelection(chat.id)}
+                      />
                     )}
-                  >
-                    {avatar ? (
-                      <img src={avatar} alt="" className="w-12 h-12 rounded-full object-cover border border-white/10 flex-shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold select-none">
-                        {initials}
+                    <button
+                      onClick={() => !isSelectMode && setActiveChat(chat)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3 border border-transparent",
+                        activeChat?.id === chat.id && !isSelectMode
+                          ? "bg-indigo-500/10 border-indigo-500/20" 
+                          : "hover:bg-white/5"
+                      )}
+                    >
+                      {avatar ? (
+                        <img src={avatar} alt="" className="w-12 h-12 rounded-full object-cover border border-white/10 flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold select-none">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <h4 className="font-semibold text-sm truncate pr-2">{displayName || 'Unknown Chat'}</h4>
+                          <span className="text-[10px] text-slate-500 flex-shrink-0 uppercase">
+                            {chat.updatedAt ? formatDistanceToNow(chat.updatedAt, { addSuffix: true }) : ''}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 truncate">{chat.lastMessageContent || 'No messages yet'}</p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <div className="flex justify-between items-baseline mb-1">
-                        <h4 className="font-semibold text-sm truncate pr-2">{displayName || 'Unknown Chat'}</h4>
-                        <span className="text-[10px] text-slate-500 flex-shrink-0 uppercase">
-                          {chat.updatedAt ? formatDistanceToNow(chat.updatedAt, { addSuffix: true }) : ''}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 truncate">{chat.lastMessageContent || 'No messages yet'}</p>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 )
               })
             )}

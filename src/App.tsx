@@ -5,13 +5,25 @@ import { auth, db, loginWithGoogle } from './lib/firebase';
 import { OperationType, handleFirestoreError } from './lib/utils';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { Loader2, MessageSquare, Settings } from 'lucide-react';
 import type { Chat } from './types';
+import { SettingsModal } from './components/SettingsModal';
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
+  const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem('praxa-theme-color') || '#0A0A0C');
+  const [customBg, setCustomBg] = useState<string>(() => localStorage.getItem('praxa-custom-bg') || '');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('praxa-theme-color', themeColor);
+  }, [themeColor]);
+
+  useEffect(() => {
+    localStorage.setItem('praxa-custom-bg', customBg);
+  }, [customBg]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -88,9 +100,28 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#0A0A0C] text-slate-200 overflow-hidden font-sans">
-      <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
-      <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
+    <div 
+      className={`flex h-screen w-full text-slate-200 overflow-hidden font-sans bg-cover bg-center ${themeColor === '#F8FAFC' && !customBg ? 'light-mode' : ''}`}
+      style={{ 
+        backgroundColor: customBg ? undefined : (themeColor === '#F8FAFC' ? '#0A0A0C' : themeColor),
+        backgroundImage: customBg ? `url(${customBg})` : undefined
+      }}
+    >
+      <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
+      
+      <div className="flex h-full w-full z-10 relative">
+        <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} onOpenSettings={() => setIsSettingsOpen(true)} />
+        <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
+      </div>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)}
+        themeColor={themeColor}
+        setThemeColor={setThemeColor}
+        customBg={customBg}
+        setCustomBg={setCustomBg}
+      />
     </div>
   );
 }

@@ -39,4 +39,7 @@ export interface Message {
   fileSize?: number;
   attachments?: string[];
   starredBy?: string[];
+  status?: 'sent' | 'delivered' | 'read';
+  deliveredTo?: string[];
+  readBy?: string[];
 }

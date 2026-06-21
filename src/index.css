@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 @layer utilities {
+  .light-mode {
+    filter: invert(1) hue-rotate(180deg);
+  }
+  .light-mode img,
+  .light-mode video,
+  .light-mode [data-invert-ignore] {
+    filter: invert(1) hue-rotate(180deg);
+  }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: #334155 transparent; /* slate-700 */

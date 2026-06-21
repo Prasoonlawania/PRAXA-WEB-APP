@@ -35,6 +35,8 @@ import {
   Forward,
   Trash2,
   CheckCircle,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import type { Chat, Message } from "../types";
 import { format } from "date-fns";
@@ -91,11 +93,25 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       q,
       (snapshot) => {
         const msgs: Message[] = [];
+        const unreadIds: string[] = [];
         snapshot.forEach((docSnapshot) => {
-          msgs.push({ ...docSnapshot.data(), id: docSnapshot.id } as Message);
+          const m = { ...docSnapshot.data(), id: docSnapshot.id } as Message;
+          msgs.push(m);
+          if (m.senderId !== user.uid && m.status !== 'read') {
+            unreadIds.push(m.id);
+          }
         });
         setMessages(msgs);
         setTimeout(scrollToBottom, 100);
+
+        // Mark as read in background
+        if (unreadIds.length > 0) {
+          unreadIds.forEach(id => {
+            updateDoc(doc(db, "chats", activeChat.id, "messages", id), {
+              status: 'read'
+            }).catch(console.error);
+          });
+        }
       },
       (error) => {
         handleFirestoreError(
@@ -293,6 +309,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
           fileUrl: downloadURL,
           fileName: file.name || originalName || "upload",
           fileSize: file.size,
+          status: "sent",
         };
 
         try {
@@ -337,6 +354,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       content: messageContent,
       type: "text",
       createdAt: Date.now(),
+      status: "sent",
     };
 
     try {
@@ -366,7 +384,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
 
-        <div className="z-10 bg-[#16161D] backdrop-blur-md p-6 rounded-2xl border border-white/5 flex flex-col items-center max-w-sm text-center shadow-xl">
+        <div className="z-10 bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/5 flex flex-col items-center max-w-sm text-center shadow-xl">
           <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-indigo-400 border border-white/10 shadow-inner">
             <Hash className="w-8 h-8" />
           </div>
@@ -397,9 +415,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
     activeChat.type === "direct" ? activeChat.otherUser?.isOnline : false;
 
   const startCall = (video: boolean) => {
-    setIsVideoCallType(video);
-    setIsInitiator(true);
-    setIsInCall(true);
+    alert("Feature will roll out soon");
   };
 
   const joinCall = () => {
@@ -452,7 +468,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       )}
 
       {/* Header */}
-      <div className="h-18 border-b border-white/5 flex items-center justify-between px-8 bg-[#0A0A0C] shrink-0 z-10">
+      <div className="h-18 border-b border-white/5 flex items-center justify-between px-8 bg-black/20 backdrop-blur-sm shrink-0 z-10">
         <div className="flex items-center gap-4">
           <div className="relative">
             {avatar ? (
@@ -564,14 +580,27 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
 
               <div className="flex flex-col max-w-[70%]">
                 {showTime && (
-                  <span
+                  <div
                     className={cn(
-                      "text-[10px] text-slate-500 font-bold mb-2 uppercase",
+                      "flex items-center gap-1 mb-2",
                       isMine ? "self-end" : "self-start",
                     )}
                   >
-                    {format(msg.createdAt, "MMM d, h:mm a")}
-                  </span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">
+                      {format(msg.createdAt, "MMM d, h:mm a")}
+                    </span>
+                    {isMine && (
+                      <span className="ml-1 flex items-center" title={`Status: ${msg.status || 'sent'}`}>
+                        {msg.status === 'read' ? (
+                          <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+                        ) : msg.status === 'delivered' || (msg.status === 'sent' && activeChat.otherUser?.isOnline) ? (
+                          <CheckCheck className="w-3.5 h-3.5 text-slate-400" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5 text-slate-400" />
+                        )}
+                      </span>
+                    )}
+                  </div>
                 )}
                 <div
                   className={cn(
@@ -665,7 +694,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       </div>
 
       {/* Input */}
-      <div className="p-6 border-t border-white/5 bg-[#0A0A0C] shrink-0">
+      <div className="p-6 border-t border-white/5 bg-black/20 backdrop-blur-sm shrink-0">
         {uploadingFile && (
           <div className="mb-4 bg-[#16161D] border border-white/10 rounded-xl p-3 flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-500/10 rounded-lg flex items-center justify-center text-indigo-400 shrink-0">
