@@ -15,6 +15,11 @@ export default function App() {
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem('praxa-theme-color') || '#0A0A0C');
   const [customBg, setCustomBg] = useState<string>(() => localStorage.getItem('praxa-custom-bg') || '');
+  
+  const [aiProfilePic, setAiProfilePic] = useState<string>(() => localStorage.getItem('praxa-ai-pic') || 'https://api.dicebear.com/7.x/bottts/svg?seed=praxa');
+  const [aiBg, setAiBg] = useState<string>(() => localStorage.getItem('praxa-ai-bg') || '');
+  const [userProfilePic, setUserProfilePic] = useState<string>(() => localStorage.getItem('praxa-user-pic') || '');
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -24,6 +29,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('praxa-custom-bg', customBg);
   }, [customBg]);
+
+  useEffect(() => { localStorage.setItem('praxa-ai-pic', aiProfilePic); }, [aiProfilePic]);
+  useEffect(() => { localStorage.setItem('praxa-ai-bg', aiBg); }, [aiBg]);
+  useEffect(() => { localStorage.setItem('praxa-user-pic', userProfilePic); }, [userProfilePic]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -111,10 +120,10 @@ export default function App() {
       
       <div className="flex h-full w-full z-10 relative">
         <div className={`w-full h-full lg:w-96 shrink-0 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
-          <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} onOpenSettings={() => setIsSettingsOpen(true)} />
+          <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} onOpenSettings={() => setIsSettingsOpen(true)} aiProfilePic={aiProfilePic} userProfilePic={userProfilePic} />
         </div>
         <div className={`flex-1 h-full min-w-0 ${activeChat ? 'flex' : 'hidden lg:flex'}`}>
-          <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
+          <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} aiProfilePic={aiProfilePic} aiBg={aiBg} userProfilePic={userProfilePic} customBg={customBg} />
         </div>
       </div>
 
@@ -125,6 +134,12 @@ export default function App() {
         setThemeColor={setThemeColor}
         customBg={customBg}
         setCustomBg={setCustomBg}
+        aiProfilePic={aiProfilePic}
+        setAiProfilePic={setAiProfilePic}
+        aiBg={aiBg}
+        setAiBg={setAiBg}
+        userProfilePic={userProfilePic}
+        setUserProfilePic={setUserProfilePic}
       />
     </div>
   );

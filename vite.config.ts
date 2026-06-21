@@ -2,11 +2,36 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
     base: './',
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(), 
+      tailwindcss(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true
+        },
+        manifest: {
+          short_name: "Praxa",
+          name: "Praxa AI Chat",
+          icons: [
+            {
+              src: "https://api.dicebear.com/7.x/bottts/svg?seed=praxa",
+              type: "image/svg+xml",
+              sizes: "192x192 512x512"
+            }
+          ],
+          start_url: "/",
+          display: "standalone",
+          theme_color: "#0A0A0C",
+          background_color: "#0A0A0C"
+        }
+      })
+    ],
     build: { chunkSizeWarningLimit: 1500 },
     resolve: {
       alias: {

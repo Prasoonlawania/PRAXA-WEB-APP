@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, query, where, onSnapshot, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { db, logout } from '../lib/firebase';
 import { OperationType, handleFirestoreError, cn } from '../lib/utils';
-import { Settings, Search, Plus, MessageSquare, LogOut, Trash2, CheckCircle } from 'lucide-react';
+import { Settings, Search, Plus, MessageSquare, LogOut, Trash2, CheckCircle, Bot } from 'lucide-react';
 import type { Chat, User } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -12,9 +12,11 @@ interface SidebarProps {
   activeChat: Chat | null;
   setActiveChat: (chat: Chat | null) => void;
   onOpenSettings?: () => void;
+  aiProfilePic?: string;
+  userProfilePic?: string;
 }
 
-export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: SidebarProps) {
+export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiProfilePic, userProfilePic }: SidebarProps) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
@@ -22,6 +24,13 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: Sid
 
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedChats, setSelectedChats] = useState<Set<string>>(new Set());
+  const knownTimestamps = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   // Load user's chats
   useEffect(() => {
@@ -31,6 +40,25 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: Sid
     );
 
     const unsub = onSnapshot(q, async (snapshot) => {
+      // Handle notifications for new messages
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const chat = change.doc.data() as Chat;
+          const knownStart = knownTimestamps.current[chat.id] || 0;
+          if (chat.lastSenderId && chat.lastSenderId !== user.uid && chat.updatedAt > knownStart && knownStart !== 0) {
+            // New message!
+            if ('Notification' in window && Notification.permission === 'granted' && activeChat?.id !== chat.id) {
+               new Notification(chat.type === 'direct' ? 'New Message' : (chat.name || 'Group Message'), {
+                 body: chat.lastMessageContent,
+               });
+            }
+          }
+          knownTimestamps.current[chat.id] = Math.max(chat.updatedAt || 0, knownTimestamps.current[chat.id] || 0);
+        } else if (change.type === 'added') {
+           knownTimestamps.current[change.doc.id] = change.doc.data().updatedAt || 0;
+        }
+      });
+
       const chatsData: Chat[] = [];
       for (const docSnapshot of snapshot.docs) {
         const data = docSnapshot.data() as Chat;
@@ -55,6 +83,18 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: Sid
       
       // Sort by latest updated
       chatsData.sort((a, b) => b.updatedAt - a.updatedAt);
+      
+      // Inject Praxa AI chat
+      chatsData.unshift({
+        id: 'praxa_ai',
+        type: 'ai',
+        name: 'Praxa AI',
+        participants: [user.uid],
+        createdAt: 0,
+        updatedAt: Date.now(),
+        lastMessageContent: 'Ask me anything!'
+      });
+
       setChats(chatsData);
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'chats');
@@ -162,8 +202,10 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: Sid
       {/* Header */}
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {user.photoURL ? (
-            <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border border-white/10" />
+          {userProfilePic ? (
+            <img src={userProfilePic} alt="Profile" className="w-10 h-10 rounded-full border border-white/10 object-cover" />
+          ) : user.photoURL ? (
+            <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border border-white/10 object-cover" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
               {user.displayName?.[0] || 'U'}
@@ -287,7 +329,15 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: Sid
                           : "hover:bg-white/5"
                       )}
                     >
-                      {avatar ? (
+                      {chat.type === 'ai' ? (
+                        aiProfilePic ? (
+                          <img src={aiProfilePic} alt="Praxa AI" className="w-12 h-12 rounded-full object-cover border border-white/10 flex-shrink-0" />
+                        ) : (
+                          <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
+                            <Bot className="w-6 h-6" />
+                          </div>
+                        )
+                      ) : avatar ? (
                         <img src={avatar} alt="" className="w-12 h-12 rounded-full object-cover border border-white/10 flex-shrink-0" />
                       ) : (
                         <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold select-none">

@@ -11,12 +11,14 @@ export interface User {
 
 export interface Chat {
   id: string; // Document ID
-  type: 'direct' | 'group';
+  type: 'direct' | 'group' | 'ai';
   participants: string[];
   createdAt: number;
   updatedAt: number;
   lastMessageId?: string;
   name?: string;
+  lastMessageContent?: string;
+  lastSenderId?: string;
   groupAvatar?: string;
   adminIds?: string[];
   

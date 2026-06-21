@@ -8,6 +8,12 @@ interface SettingsModalProps {
   setThemeColor: (color: string) => void;
   customBg: string;
   setCustomBg: (url: string) => void;
+  aiProfilePic: string;
+  setAiProfilePic: (url: string) => void;
+  aiBg: string;
+  setAiBg: (url: string) => void;
+  userProfilePic: string;
+  setUserProfilePic: (url: string) => void;
 }
 
 const THEMES = [
@@ -15,13 +21,13 @@ const THEMES = [
   { name: 'Light', color: '#F8FAFC' },
 ];
 
-export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, customBg, setCustomBg }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, customBg, setCustomBg, aiProfilePic, setAiProfilePic, aiBg, setAiBg, userProfilePic, setUserProfilePic }: SettingsModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const aiPicInputRef = useRef<HTMLInputElement>(null);
+  const aiBgInputRef = useRef<HTMLInputElement>(null);
+  const userPicInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processImageUpload = (file: File, setter: (url: string) => void) => {
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -49,13 +55,18 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            setCustomBg(dataUrl);
+            setter(dataUrl);
           }
         };
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) processImageUpload(file, setter);
   };
 
   if (!isOpen) return null;
@@ -116,7 +127,7 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
                   ref={fileInputRef} 
                   accept="image/jpeg,image/png,image/webp" 
                   className="hidden" 
-                  onChange={handleFileUpload}
+                  onChange={(e) => handleFileUpload(e, setCustomBg)}
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -126,7 +137,46 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
                   <Upload className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-slate-500">Provide a direct link to an image or upload one from your device. This will override the color theme.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Your Profile Picture</h3>
+            <div className="flex gap-2 relative">
+              <input type="file" ref={userPicInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, setUserProfilePic)} />
+              <button onClick={() => userPicInputRef.current?.click()} className="flex-1 flex justify-center items-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors text-sm text-slate-300">
+                <Upload className="w-4 h-4 mr-2" /> Upload Avatar
+              </button>
+              {userProfilePic && (
+                <button onClick={() => setUserProfilePic('')} className="px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm transition-colors border border-red-500/20">Clear</button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Praxa AI Branding</h3>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2 relative items-center">
+                <span className="text-sm text-slate-400 w-24">Profile Pic:</span>
+                <input type="file" ref={aiPicInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, setAiProfilePic)} />
+                <button onClick={() => aiPicInputRef.current?.click()} className="flex-1 flex justify-center items-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors text-sm text-slate-300">
+                  <Upload className="w-4 h-4 mr-2" /> Upload Logo
+                </button>
+                {aiProfilePic && (
+                  <button onClick={() => setAiProfilePic('')} className="px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm transition-colors border border-red-500/20">Clear</button>
+                )}
+              </div>
+              
+              <div className="flex gap-2 relative items-center">
+                <span className="text-sm text-slate-400 w-24">Background:</span>
+                <input type="file" ref={aiBgInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, setAiBg)} />
+                <button onClick={() => aiBgInputRef.current?.click()} className="flex-1 flex justify-center items-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors text-sm text-slate-300">
+                  <Upload className="w-4 h-4 mr-2" /> Upload BG
+                </button>
+                {aiBg && (
+                  <button onClick={() => setAiBg('')} className="px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm transition-colors border border-red-500/20">Clear</button>
+                )}
+              </div>
             </div>
           </div>
 

@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { User as FirebaseUser } from "firebase/auth";
+import Markdown from "react-markdown";
 import { db, storage } from "../lib/firebase";
 import { OperationType, handleFirestoreError, cn } from "../lib/utils";
 import {
@@ -37,6 +38,7 @@ import {
   CheckCircle,
   Check,
   CheckCheck,
+  Bot
 } from "lucide-react";
 import type { Chat, Message } from "../types";
 import { format } from "date-fns";
@@ -46,9 +48,13 @@ interface ChatAreaProps {
   user: FirebaseUser;
   activeChat: Chat | null;
   setActiveChat?: (chat: Chat | null) => void;
+  aiProfilePic?: string;
+  aiBg?: string;
+  userProfilePic?: string;
+  customBg?: string;
 }
 
-export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
+export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, userProfilePic, customBg }: ChatAreaProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [uploadingFile, setUploadingFile] = useState<File | null>(null);
@@ -64,8 +70,21 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [aiMessages, setAiMessages] = useState<Message[]>([
+    {
+       id: 'welcome',
+       chatId: 'praxa_ai',
+       senderId: 'praxa_ai',
+       content: 'Hi! I am Praxa AI. How can I help you today?',
+       type: 'text',
+       createdAt: Date.now()
+    }
+  ]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
   const handleDeleteChat = async () => {
     if (!activeChat || !setActiveChat) return;
+    if (activeChat.type === 'ai') return;
     const confirm = window.confirm("Are you sure you want to delete this chat?");
     if (!confirm) return;
     try {
@@ -82,6 +101,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
 
   useEffect(() => {
     if (!activeChat) return;
+    if (activeChat.type === 'ai') return;
 
     const q = query(
       collection(db, "chats", activeChat.id, "messages"),
@@ -269,72 +289,99 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
     }
 
     setUploadingFile(file);
-    const storageRef = ref(
-      storage,
-      `chats/${activeChat.id}/${Date.now()}_${file.name}`,
-    );
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    
+    // Attempt Firebase Storage First
+    try {
+      const storageRef = ref(
+        storage,
+        `chats/${activeChat.id}/${Date.now()}_${file.name}`,
+      );
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-      },
-      (error) => {
-        console.error("Upload fail:", error);
-        alert(
-          "Upload failed. Ensure Firebase Storage is enabled in the Firebase Console.",
-        );
-        setUploadingFile(null);
-        setUploadProgress(0);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        async (error) => {
+          console.warn("Storage upload failed, falling back to Base64...", error);
+          // Fallback to Base64
+          fallbackToBase64(file);
+        },
+        async () => {
+          try {
+             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+             await finalizeUpload(file, downloadURL);
+          } catch(e) {
+             fallbackToBase64(file);
+          }
+        }
+      );
+    } catch(e) {
+      fallbackToBase64(file);
+    }
 
+    async function fallbackToBase64(f: File) {
+       if (f.size > 900 * 1024) {
+         alert("File is too large! Maximum size without Firebase Storage is 900KB.");
+         setUploadingFile(null);
+         if (fileInputRef.current) fileInputRef.current.value = "";
+         return;
+       }
+       const reader = new FileReader();
+       reader.onload = async () => {
+           const downloadURL = reader.result as string;
+           await finalizeUpload(f, downloadURL);
+       };
+       reader.onerror = () => {
+         alert("Failed to read file.");
+         setUploadingFile(null);
+         if (fileInputRef.current) fileInputRef.current.value = "";
+       };
+       reader.readAsDataURL(f);
+    }
+
+    async function finalizeUpload(f: File, fileUrl: string) {
         let type: Message["type"] = "file";
-        if (file.type.startsWith("image/")) type = "image";
-        else if (file.type.startsWith("video/")) type = "video";
-        else if (file.type.startsWith("audio/")) type = "audio";
+        if (f.type.startsWith("image/")) type = "image";
+        else if (f.type.startsWith("video/")) type = "video";
+        else if (f.type.startsWith("audio/")) type = "audio";
 
         const messageId = crypto.randomUUID();
         const newMessage: Message = {
           id: messageId,
-          chatId: activeChat.id,
+          chatId: activeChat!.id,
           senderId: user.uid,
           content: "",
           type,
           createdAt: Date.now(),
-          fileUrl: downloadURL,
-          fileName: file.name || originalName || "upload",
-          fileSize: file.size,
+          fileUrl,
+          fileName: f.name || "upload",
+          fileSize: f.size,
           status: "sent",
         };
 
         try {
           await setDoc(
-            doc(db, "chats", activeChat.id, "messages", messageId),
+            doc(db, "chats", activeChat!.id, "messages", messageId),
             newMessage,
           );
-          await updateDoc(doc(db, "chats", activeChat.id), {
+          await updateDoc(doc(db, "chats", activeChat!.id), {
             lastMessageId: messageId,
             lastMessageContent: `📷 ${type === "image" ? "Image" : type === "video" ? "Video" : type === "audio" ? "Audio" : "File"}`,
+            lastSenderId: user.uid,
             updatedAt: Date.now(),
           });
         } catch (error) {
-          handleFirestoreError(
-            error,
-            OperationType.CREATE,
-            `chats/${activeChat.id}/messages`,
-          );
+           console.error(error);
+           alert("Failed to send file message.");
+        } finally {
+           setUploadingFile(null);
+           setTimeout(scrollToBottom, 100);
+           if (fileInputRef.current) fileInputRef.current.value = "";
         }
-
-        setUploadingFile(null);
-        setUploadProgress(0);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      },
-    );
+    }
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -343,6 +390,40 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
 
     const messageContent = inputText.trim();
     setInputText("");
+
+    if (activeChat.type === 'ai') {
+      const messageId = crypto.randomUUID();
+      const newMsg: Message = { id: messageId, chatId: activeChat.id, senderId: user.uid, content: messageContent, type: 'text', createdAt: Date.now() };
+      setAiMessages(prev => [...prev, newMsg]);
+      setIsAiLoading(true);
+      
+      try {
+        const res = await fetch('/api/gemini/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: messageContent })
+        });
+        const data = await res.json();
+        
+        const aiMsg: Message = {
+          id: crypto.randomUUID(),
+          chatId: activeChat.id,
+          senderId: 'praxa_ai',
+          content: data.text || data.error || 'Sorry, I encountered an error.',
+          type: 'text',
+          createdAt: Date.now()
+        };
+        setAiMessages(prev => [...prev, aiMsg]);
+        setIsAiLoading(false);
+        setTimeout(scrollToBottom, 100);
+      } catch (err) {
+         setAiMessages(prev => [...prev, {
+            id: crypto.randomUUID(), chatId: activeChat.id, senderId: 'praxa_ai', content: 'Network or server error.', type: 'text', createdAt: Date.now()
+         }]);
+         setIsAiLoading(false);
+      }
+      return;
+    }
 
     const messageId = crypto.randomUUID();
     const messageRef = doc(db, "chats", activeChat.id, "messages", messageId);
@@ -366,6 +447,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       await updateDoc(chatRef, {
         lastMessageId: messageId,
         lastMessageContent: messageContent,
+        lastSenderId: user.uid,
         updatedAt: Date.now(),
       });
     } catch (error) {
@@ -424,8 +506,39 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
     setIncomingCall(false);
   };
 
+  const handleSummarize = async () => {
+    const chatHistory = messages.map(msg => `${msg.senderId === user.uid ? 'Me' : 'Them'}: ${msg.content || '[File/Image]'}`).join('\n');
+    setIsAiLoading(true);
+    try {
+      const res = await fetch('/api/gemini/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatHistory })
+      });
+      const data = await res.json();
+      
+      const aiMsg: Message = {
+        id: crypto.randomUUID(),
+        chatId: activeChat.id,
+        senderId: 'praxa_ai', // Pseudo-sender so it appears distinct
+        content: `**Praxa AI Summary:**\n${data.summary || data.error}`,
+        type: 'text',
+        createdAt: Date.now()
+      };
+      // For summarize, we just add it to the local state so the user can see it! Or we could save it to firestore. Let's save it to firestore so everyone sees the summary!
+      await setDoc(doc(db, "chats", activeChat.id, "messages", aiMsg.id), aiMsg);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to summarize chat.");
+    } finally {
+      setIsAiLoading(false);
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
   return (
-    <div className="flex-1 flex flex-col relative min-w-0 bg-transparent">
+    <div className="flex-1 flex flex-col relative min-w-0 bg-transparent" style={activeChat.type === 'ai' && aiBg ? { backgroundImage: `url(${aiBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
+      {activeChat.type === 'ai' && aiBg && <div className="absolute inset-0 bg-black/60 pointer-events-none z-0" />}
       {isInCall && (
         <VideoCall
           chatId={activeChat.id}
@@ -472,12 +585,18 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
         <div className="flex items-center gap-3 lg:gap-4">
           <button 
             className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-white"
-            onClick={() => setActiveChat(null)}
+            onClick={() => setActiveChat?.(null)}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div className="relative">
-            {avatar ? (
+            {activeChat.type === 'ai' ? (
+              aiProfilePic ? (
+                 <img src={aiProfilePic} alt="Praxa AI" className="w-10 h-10 rounded-full border border-white/10 object-cover" />
+              ) : (
+                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-white"><Bot className="w-5 h-5"/></div>
+              )
+            ) : avatar ? (
               <img
                 src={avatar}
                 alt=""
@@ -488,7 +607,7 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
                 {displayName?.[0] || "C"}
               </div>
             )}
-            {isOnline && (
+            {isOnline && activeChat.type !== 'ai' && (
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-indigo-500 border-2 border-[#0A0A0C] rounded-full animate-pulse" />
             )}
           </div>
@@ -509,6 +628,16 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
         </div>
 
         <div className="flex gap-4">
+          {activeChat.type !== 'ai' && (
+             <button
+               onClick={handleSummarize}
+               disabled={isAiLoading || messages.length === 0}
+               className="p-2 text-cyan-400 hover:text-cyan-300 transition-colors bg-cyan-500/10 rounded-lg hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed hidden sm:block"
+               title="Summarize Chat with Praxa AI"
+             >
+               <Bot className="w-5 h-5" />
+             </button>
+          )}
           <button
             onClick={() => startCall(false)}
             className="p-2 text-slate-400 hover:text-white transition-colors bg-white/5 rounded-lg hover:bg-white/10"
@@ -548,12 +677,13 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-8 py-8 custom-scrollbar flex flex-col gap-6">
-        {messages.map((msg, index) => {
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-8 custom-scrollbar flex flex-col gap-6 relative">
+        {(activeChat.type === 'ai' ? aiMessages : messages).map((msg, index) => {
           const isMine = msg.senderId === user.uid;
+          const msgList = activeChat.type === 'ai' ? aiMessages : messages;
           const showTime =
             index === 0 ||
-            msg.createdAt - messages[index - 1].createdAt > 5 * 60 * 1000;
+            msg.createdAt - msgList[index - 1].createdAt > 5 * 60 * 1000;
 
           return (
             <div
@@ -577,12 +707,22 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
               {/* Optional avatar gap */}
               <div
                 className={cn(
-                  "w-8 h-8 rounded-full flex-shrink-0",
+                  "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold relative overflow-hidden",
                   isMine
-                    ? "bg-slate-700"
-                    : "bg-gradient-to-tr from-indigo-500 to-purple-500",
+                    ? "bg-slate-700 text-white"
+                    : msg.senderId === 'praxa_ai'
+                    ? "bg-gradient-to-tr from-cyan-500 to-blue-500 text-white"
+                    : "bg-gradient-to-tr from-indigo-500 to-purple-500 text-white",
                 )}
-              ></div>
+              >
+                  {isMine ? (
+                    userProfilePic ? <img src={userProfilePic} className="w-full h-full object-cover" /> : user.photoURL ? <img src={user.photoURL} className="w-full h-full object-cover" /> : null
+                  ) : msg.senderId === 'praxa_ai' ? (
+                    aiProfilePic ? <img src={aiProfilePic} className="w-full h-full object-cover" /> : <Bot className="w-5 h-5"/>
+                  ) : (
+                    avatar ? <img src={avatar} className="w-full h-full object-cover" /> : <span className="text-xs">{activeChat.name?.[0] || 'U'}</span>
+                  )}
+              </div>
 
               <div className="flex flex-col max-w-[70%]">
                 {showTime && (
@@ -636,7 +776,15 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
                      <div className={cn("absolute -top-1 -right-1 z-10")}><Star className="w-4 h-4 fill-yellow-500 text-yellow-500 drop-shadow-md" /></div>
                   )}
 
-                  {msg.type === "text" && msg.content}
+                  {msg.type === "text" && (
+                    msg.senderId === 'praxa_ai' ? (
+                      <div className="markdown-body prose prose-invert max-w-none text-sm">
+                        <Markdown>{msg.content}</Markdown>
+                      </div>
+                    ) : (
+                      <span className="whitespace-pre-wrap">{msg.content}</span>
+                    )
+                  )}
                   {msg.type === "image" && msg.fileUrl && (
                     <img
                       src={msg.fileUrl}
@@ -696,6 +844,14 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
             </div>
           );
         })}
+        {isAiLoading && (
+          <div className="flex gap-4 relative group animate-pulse">
+            <div className="w-8 h-8 rounded-full flex-shrink-0 bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-white"><Bot className="w-4 h-4" /></div>
+            <div className="p-4 rounded-2xl shadow-sm text-sm bg-white/5 border border-white/10 text-slate-400 rounded-tl-none">
+              Praxa AI is typing...
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
