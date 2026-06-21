@@ -158,7 +158,7 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings }: Sid
   };
 
   return (
-    <div className="w-80 lg:w-96 border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-md shrink-0">
+    <div className="w-full h-full border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-md shrink-0">
       {/* Header */}
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">

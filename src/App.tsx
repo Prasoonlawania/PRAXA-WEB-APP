@@ -110,8 +110,12 @@ export default function App() {
       <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
       
       <div className="flex h-full w-full z-10 relative">
-        <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} onOpenSettings={() => setIsSettingsOpen(true)} />
-        <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
+        <div className={`w-full h-full lg:w-96 shrink-0 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
+          <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} onOpenSettings={() => setIsSettingsOpen(true)} />
+        </div>
+        <div className={`flex-1 h-full min-w-0 ${activeChat ? 'flex' : 'hidden lg:flex'}`}>
+          <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} />
+        </div>
       </div>
 
       <SettingsModal 

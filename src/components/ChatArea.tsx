@@ -468,8 +468,14 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
       )}
 
       {/* Header */}
-      <div className="h-18 border-b border-white/5 flex items-center justify-between px-8 bg-black/20 backdrop-blur-sm shrink-0 z-10">
-        <div className="flex items-center gap-4">
+      <div className="h-18 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-black/20 backdrop-blur-sm shrink-0 z-10">
+        <div className="flex items-center gap-3 lg:gap-4">
+          <button 
+            className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-white"
+            onClick={() => setActiveChat(null)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
           <div className="relative">
             {avatar ? (
               <img

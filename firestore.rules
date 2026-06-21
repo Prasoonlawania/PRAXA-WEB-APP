@@ -101,7 +101,10 @@ service cloud.firestore {
         (data.keys().hasAll(['fileName']) ? data.fileName is string : true) &&
         (data.keys().hasAll(['fileSize']) ? data.fileSize is number : true) &&
         (data.keys().hasAll(['attachments']) ? (data.attachments is list && data.attachments.size() <= 10) : true) &&
-        (data.keys().hasAll(['starredBy']) ? (data.starredBy is list && data.starredBy.size() <= 100) : true);
+        (data.keys().hasAll(['starredBy']) ? (data.starredBy is list && data.starredBy.size() <= 100) : true) &&
+        (data.keys().hasAll(['status']) ? (data.status in ['sent', 'delivered', 'read']) : true) &&
+        (data.keys().hasAll(['deliveredTo']) ? (data.deliveredTo is list && data.deliveredTo.size() <= 100) : true) &&
+        (data.keys().hasAll(['readBy']) ? (data.readBy is list && data.readBy.size() <= 100) : true);
     }
 
     match /chats/{chatId}/messages/{messageId} {
@@ -132,8 +135,8 @@ service cloud.firestore {
         (
           existing().senderId == request.auth.uid || // Sender can do anything
           (
-             // Other participants can ONLY update starredBy
-             incoming().diff(existing()).affectedKeys().hasOnly(['starredBy'])
+             // Other participants can ONLY update starredBy and read/deliver statuses
+             incoming().diff(existing()).affectedKeys().hasOnly(['starredBy', 'status', 'deliveredTo', 'readBy'])
           )
         );
 

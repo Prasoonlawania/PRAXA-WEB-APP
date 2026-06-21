@@ -24,8 +24,14 @@ interface FirestoreErrorInfo {
 import { auth } from "./firebase";
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  if (errMsg.includes('offline') || errMsg.includes('unavailable')) {
+    console.warn('Firestore is running in offline mode. Operation deferred or failed locally:', path);
+    return; // Don't throw for offline mode
+  }
+  
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errMsg,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
