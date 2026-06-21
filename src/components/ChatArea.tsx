@@ -134,11 +134,17 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
           });
         }
         
-        // Reset unread count for this user if it's > 0
-        if (activeChat.unreadCounts?.[user.uid]) {
-          updateDoc(doc(db, "chats", activeChat.id), {
-            [`unreadCounts.${user.uid}`]: 0
-          }).catch(console.error);
+        // Reset unread count for this user
+        if (activeChat.id !== 'praxa_ai') {
+          import("firebase/firestore").then(({ getDoc, doc, updateDoc }) => {
+            getDoc(doc(db, "chats", activeChat.id)).then(snap => {
+              if (snap.exists() && snap.data().unreadCounts?.[user.uid]) {
+                updateDoc(doc(db, "chats", activeChat.id), {
+                  [`unreadCounts.${user.uid}`]: 0
+                }).catch(console.error);
+              }
+            }).catch(console.error);
+          });
         }
       },
       (error) => {
