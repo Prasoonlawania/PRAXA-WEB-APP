@@ -14,8 +14,9 @@ export const googleProvider = new GoogleAuthProvider();
 export const loginWithGoogle = async () => {
   try {
     await signInWithPopup(auth, googleProvider);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login failed:", error);
+    alert(`Login failed: ${error.message}\n\nMake sure to add "${window.location.hostname}" to the Authorized Domains list in your Firebase Console (Authentication -> Settings -> Authorized domains).`);
   }
 };
 
