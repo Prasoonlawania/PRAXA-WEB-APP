@@ -16,7 +16,7 @@ export default function App() {
   const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem('praxa-theme-color') || '#0A0A0C');
   const [customBg, setCustomBg] = useState<string>(() => localStorage.getItem('praxa-custom-bg') || '');
   
-  const [aiProfilePic, setAiProfilePic] = useState<string>(() => localStorage.getItem('praxa-ai-pic') || 'https://api.dicebear.com/7.x/bottts/svg?seed=praxa');
+  const [aiProfilePic] = useState<string>('/praxa.ai.png');
   const [aiBg, setAiBg] = useState<string>(() => localStorage.getItem('praxa-ai-bg') || '');
   const [userProfilePic, setUserProfilePic] = useState<string>(() => localStorage.getItem('praxa-user-pic') || '');
 
@@ -30,7 +30,6 @@ export default function App() {
     localStorage.setItem('praxa-custom-bg', customBg);
   }, [customBg]);
 
-  useEffect(() => { localStorage.setItem('praxa-ai-pic', aiProfilePic); }, [aiProfilePic]);
   useEffect(() => { localStorage.setItem('praxa-ai-bg', aiBg); }, [aiBg]);
   useEffect(() => { localStorage.setItem('praxa-user-pic', userProfilePic); }, [userProfilePic]);
 
@@ -134,8 +133,6 @@ export default function App() {
         setThemeColor={setThemeColor}
         customBg={customBg}
         setCustomBg={setCustomBg}
-        aiProfilePic={aiProfilePic}
-        setAiProfilePic={setAiProfilePic}
         aiBg={aiBg}
         setAiBg={setAiBg}
         userProfilePic={userProfilePic}

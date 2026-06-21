@@ -8,8 +8,6 @@ interface SettingsModalProps {
   setThemeColor: (color: string) => void;
   customBg: string;
   setCustomBg: (url: string) => void;
-  aiProfilePic: string;
-  setAiProfilePic: (url: string) => void;
   aiBg: string;
   setAiBg: (url: string) => void;
   userProfilePic: string;
@@ -21,9 +19,8 @@ const THEMES = [
   { name: 'Light', color: '#F8FAFC' },
 ];
 
-export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, customBg, setCustomBg, aiProfilePic, setAiProfilePic, aiBg, setAiBg, userProfilePic, setUserProfilePic }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, customBg, setCustomBg, aiBg, setAiBg, userProfilePic, setUserProfilePic }: SettingsModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const aiPicInputRef = useRef<HTMLInputElement>(null);
   const aiBgInputRef = useRef<HTMLInputElement>(null);
   const userPicInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,17 +153,6 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
           <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Praxa AI Branding</h3>
             <div className="flex flex-col gap-3">
-              <div className="flex gap-2 relative items-center">
-                <span className="text-sm text-slate-400 w-24">Profile Pic:</span>
-                <input type="file" ref={aiPicInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, setAiProfilePic)} />
-                <button onClick={() => aiPicInputRef.current?.click()} className="flex-1 flex justify-center items-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors text-sm text-slate-300">
-                  <Upload className="w-4 h-4 mr-2" /> Upload Logo
-                </button>
-                {aiProfilePic && (
-                  <button onClick={() => setAiProfilePic('')} className="px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-sm transition-colors border border-red-500/20">Clear</button>
-                )}
-              </div>
-              
               <div className="flex gap-2 relative items-center">
                 <span className="text-sm text-slate-400 w-24">Background:</span>
                 <input type="file" ref={aiBgInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, setAiBg)} />

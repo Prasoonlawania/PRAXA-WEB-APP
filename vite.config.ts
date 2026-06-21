@@ -20,8 +20,8 @@ export default defineConfig(() => {
           name: "Praxa AI Chat",
           icons: [
             {
-              src: "https://api.dicebear.com/7.x/bottts/svg?seed=praxa",
-              type: "image/svg+xml",
+              src: "/praxa.ai.png",
+              type: "image/png",
               sizes: "192x192 512x512"
             }
           ],
