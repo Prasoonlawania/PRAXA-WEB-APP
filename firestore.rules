@@ -1,0 +1,144 @@
+rules_version = '2';
+// Trigger save
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for User
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'createdAt']) &&
+        data.uid is string && data.uid.size() <= 128 &&
+        data.createdAt is number &&
+        data.uid == request.auth.uid &&
+        (data.keys().hasAll(['displayName']) ? (data.displayName is string && data.displayName.size() <= 100) : true) &&
+        (data.keys().hasAll(['photoURL']) ? (data.photoURL is string && data.photoURL.size() <= 2048) : true) &&
+        (data.keys().hasAll(['bio']) ? (data.bio is string && data.bio.size() <= 500) : true) &&
+        (data.keys().hasAll(['lastSeen']) ? data.lastSeen is number : true) &&
+        (data.keys().hasAll(['isOnline']) ? data.isOnline is bool : true);
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn(); // Basic check, maybe refine later if phone numbers are added
+      allow list: if isSignedIn(); // For now to find users
+      
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidUser(incoming());
+        
+      allow update: if isSignedIn() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidUser(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt;
+    }
+
+    // Validation for Chat
+    function isValidChat(data) {
+      return data.keys().hasAll(['type', 'participants', 'createdAt', 'updatedAt']) &&
+        data.type in ['direct', 'group'] &&
+        data.participants is list && data.participants.size() >= 1 && data.participants.size() <= 100 &&
+        data.createdAt is number &&
+        data.updatedAt is number &&
+        (data.keys().hasAll(['lastMessageId']) ? (data.lastMessageId is string && data.lastMessageId.size() <= 128) : true) &&
+        (data.keys().hasAll(['name']) ? (data.name is string && data.name.size() <= 100) : true) &&
+        (data.keys().hasAll(['groupAvatar']) ? (data.groupAvatar is string && data.groupAvatar.size() <= 2048) : true) &&
+        (data.keys().hasAll(['adminIds']) ? (data.adminIds is list && data.adminIds.size() <= 100) : true);
+    }
+
+    match /chats/{chatId} {
+      // Must be a participant to read
+      allow get: if isSignedIn() && isValidId(chatId) && request.auth.uid in existing().participants;
+      allow list: if isSignedIn() && request.auth.uid in resource.data.participants;
+
+      allow create: if isSignedIn() &&
+        isValidId(chatId) &&
+        isValidChat(incoming()) &&
+        request.auth.uid in incoming().participants;
+
+      allow update: if isSignedIn() &&
+        isValidId(chatId) &&
+        isValidChat(incoming()) &&
+        request.auth.uid in existing().participants &&
+        incoming().createdAt == existing().createdAt;
+    }
+
+    // Validation for Message
+    function isValidMessage(data) {
+      return data.keys().hasAll(['chatId', 'senderId', 'createdAt', 'type']) &&
+        data.chatId is string && data.chatId.size() <= 128 &&
+        data.senderId is string && data.senderId.size() <= 128 &&
+        data.createdAt is number &&
+        data.type in ['text', 'image', 'video', 'audio', 'file'] &&
+        (data.keys().hasAll(['content']) ? (data.content is string && data.content.size() <= 10000) : true) &&
+        (data.keys().hasAll(['editedAt']) ? data.editedAt is number : true) &&
+        (data.keys().hasAll(['deletedAt']) ? data.deletedAt is number : true) &&
+        (data.keys().hasAll(['fileUrl']) ? data.fileUrl is string : true) &&
+        (data.keys().hasAll(['fileName']) ? data.fileName is string : true) &&
+        (data.keys().hasAll(['fileSize']) ? data.fileSize is number : true) &&
+        (data.keys().hasAll(['attachments']) ? (data.attachments is list && data.attachments.size() <= 10) : true) &&
+        (data.keys().hasAll(['starredBy']) ? (data.starredBy is list && data.starredBy.size() <= 100) : true);
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      // Relational check: User must be a participant in the parent chat
+      function isChatParticipant(cid) {
+        return request.auth.uid in get(/databases/$(database)/documents/chats/$(cid)).data.participants;
+      }
+      
+      allow get: if isSignedIn() && isValidId(chatId) && isValidId(messageId) && isChatParticipant(chatId);
+      allow list: if isSignedIn() && isValidId(chatId) && isChatParticipant(chatId);
+
+      allow create: if isSignedIn() &&
+        isValidId(chatId) &&
+        isValidId(messageId) &&
+        isValidMessage(incoming()) &&
+        incoming().chatId == chatId &&
+        incoming().senderId == request.auth.uid &&
+        isChatParticipant(chatId);
+
+      allow update: if isSignedIn() &&
+        isValidId(chatId) &&
+        isValidId(messageId) &&
+        isValidMessage(incoming()) &&
+        incoming().senderId == existing().senderId &&
+        incoming().chatId == existing().chatId &&
+        incoming().createdAt == existing().createdAt &&
+        isChatParticipant(chatId) &&
+        (
+          existing().senderId == request.auth.uid || // Sender can do anything
+          (
+             // Other participants can ONLY update starredBy
+             incoming().diff(existing()).affectedKeys().hasOnly(['starredBy'])
+          )
+        );
+    }
+    
+    match /chats/{chatId}/calls/{document=**} {
+      function isChatParticipant(cid) {
+        return request.auth.uid in get(/databases/$(database)/documents/chats/$(cid)).data.participants;
+      }
+      allow read, write: if isSignedIn() && isChatParticipant(chatId);
+    }
+  }
+}
