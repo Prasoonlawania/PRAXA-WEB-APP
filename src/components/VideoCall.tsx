@@ -229,7 +229,7 @@ export function VideoCall({ chatId, isInitiator, isVideoCall, userId, onEndCall 
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className={`w-full h-full object-cover ${isVideoCall ? "" : "hidden"}`}
+            className={`object-cover ${isVideoCall ? "w-full h-full" : "w-px h-px opacity-0 absolute pointer-events-none"}`}
           />
           {!isVideoCall && (
             <div className="w-32 h-32 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl">
@@ -247,7 +247,7 @@ export function VideoCall({ chatId, isInitiator, isVideoCall, userId, onEndCall 
             autoPlay
             playsInline
             muted
-            className={`w-full h-full object-cover transform -scale-x-100 ${isVideoCall ? "" : "hidden"}`}
+            className={`object-cover transform -scale-x-100 ${isVideoCall ? "w-full h-full" : "w-px h-px opacity-0 absolute pointer-events-none"}`}
           />
           {!isVideoCall && (
             <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-xl">

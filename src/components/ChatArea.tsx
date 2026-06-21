@@ -13,7 +13,6 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { User as FirebaseUser } from "firebase/auth";
-import imageCompression from "browser-image-compression";
 import { db, storage } from "../lib/firebase";
 import { OperationType, handleFirestoreError, cn } from "../lib/utils";
 import {
@@ -204,17 +203,50 @@ export function ChatArea({ user, activeChat, setActiveChat }: ChatAreaProps) {
     }
 
     const originalName = file.name;
-    const originalType = file.type;
 
     if (file.type.startsWith("image/")) {
       try {
-        const options = {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1280,
-          useWebWorker: true
-        };
-        const compressed = await imageCompression(file, options);
-        file = new File([compressed], originalName, { type: compressed.type || originalType });
+        file = await new Promise<File>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const maxDimension = 1280;
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height *= maxDimension / width));
+                width = maxDimension;
+              } else {
+                width = Math.round((width *= maxDimension / height));
+                height = maxDimension;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return reject("Canvas context not obtained");
+
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  resolve(new File([blob], originalName, { type: "image/jpeg" }));
+                } else {
+                  reject(new Error("Canvas to Blob failed"));
+                }
+              },
+              "image/jpeg",
+              0.85
+            );
+          };
+          img.onerror = () => reject(new Error("Image load error"));
+          img.src = URL.createObjectURL(file!);
+        });
       } catch (error) {
         console.error("Error compressing image:", error);
       }
