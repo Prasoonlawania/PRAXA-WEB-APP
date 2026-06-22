@@ -20,12 +20,12 @@ export default defineConfig(() => {
           name: "Praxa AI Chat",
           icons: [
             {
-              src: "/praxa.ai.png",
+              src: "praxa.ai.png",
               type: "image/png",
               sizes: "192x192 512x512"
             }
           ],
-          start_url: "/",
+          start_url: ".",
           display: "standalone",
           theme_color: "#0A0A0C",
           background_color: "#0A0A0C"

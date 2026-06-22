@@ -16,7 +16,7 @@ export default function App() {
   const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem('praxa-theme-color') || '#0A0A0C');
   const [customBg, setCustomBg] = useState<string>(() => localStorage.getItem('praxa-custom-bg') || '');
   
-  const [aiProfilePic] = useState<string>('/praxa.ai.png');
+  const [aiProfilePic] = useState<string>('./praxa.ai.png');
   const [aiBg, setAiBg] = useState<string>(() => localStorage.getItem('praxa-ai-bg') || '');
   const [userProfilePic, setUserProfilePic] = useState<string>(() => localStorage.getItem('praxa-user-pic') || '');
 
