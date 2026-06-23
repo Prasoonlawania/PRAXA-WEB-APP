@@ -14,9 +14,10 @@ interface SidebarProps {
   onOpenSettings?: () => void;
   aiProfilePic?: string;
   userProfilePic?: string;
+  themeId?: string;
 }
 
-export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiProfilePic, userProfilePic }: SidebarProps) {
+export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiProfilePic, userProfilePic, themeId }: SidebarProps) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
@@ -198,29 +199,29 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
   };
 
   return (
-    <div className="w-full h-full border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-md shrink-0">
+    <div className="w-full h-full border-r theme-border flex flex-col theme-panel-bg backdrop-blur-md shrink-0">
       {/* Header */}
-      <div className="p-6 border-b border-white/5 flex items-center justify-between">
+      <div className="p-6 border-b theme-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           {userProfilePic ? (
-            <img src={userProfilePic} alt="Profile" className="w-10 h-10 rounded-full border border-white/10 object-cover" />
+            <img src={userProfilePic} alt="Profile" className="w-10 h-10 rounded-full border theme-border object-cover" />
           ) : user.photoURL ? (
-            <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border border-white/10 object-cover" />
+            <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border theme-border object-cover" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-full theme-accent-bg flex items-center justify-center text-white font-bold shadow-lg shadow-[var(--theme-accent-glow)]">
               {user.displayName?.[0] || 'U'}
             </div>
           )}
           <div>
-            <h2 className="font-bold text-lg">{user.displayName}</h2>
-            <p className="text-xs text-slate-500">Online</p>
+            <h2 className="font-bold text-lg theme-text-primary">{user.displayName}</h2>
+            <p className="text-xs theme-text-secondary opacity-70">Online</p>
           </div>
         </div>
         <div className="flex gap-2">
           {isSelectMode && selectedChats.size > 0 && (
             <button 
               onClick={handleBulkDelete}
-              className="p-2 bg-red-600/20 text-red-500 hover:bg-red-600/30 rounded-lg transition-colors"
+              className="p-2 bg-red-600/20 text-red-500 hover:bg-red-600/30 rounded-lg transition-colors border border-red-500/10"
               title="Delete Selected Chats"
             >
               <Trash2 className="w-5 h-5" />
@@ -231,24 +232,24 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
               setIsSelectMode(!isSelectMode);
               setSelectedChats(new Set());
             }}
-            className={cn("p-2 rounded-lg transition-colors",
-               isSelectMode ? "bg-indigo-500/20 text-indigo-400" : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+            className={cn("p-2 rounded-lg transition-colors border border-transparent",
+               isSelectMode ? "bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-[var(--theme-accent)]/20" : "bg-white/5 theme-text-secondary hover:bg-white/10 hover:theme-text-primary"
             )}
             title="Select Chats"
           >
             <CheckCircle className="w-5 h-5" />
           </button>
-          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
+          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors theme-text-secondary hover:theme-text-primary">
             <Plus className="w-5 h-5" />
           </button>
           <button 
             onClick={onOpenSettings}
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
+            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors theme-text-secondary hover:theme-text-primary"
             title="Settings"
           >
             <Settings className="w-5 h-5" />
           </button>
-          <button onClick={logout} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
+          <button onClick={logout} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors theme-text-secondary hover:theme-text-primary">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
@@ -260,11 +261,11 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
           <input
             type="text"
             placeholder="Search or start new chat"
-            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-10 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors"
+            className="w-full bg-white/5 border theme-border rounded-xl py-2.5 px-10 text-sm focus:outline-none focus:border-[var(--theme-accent)]/40 transition-colors theme-text-primary"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3.5 top-3 theme-text-secondary opacity-60" />
         </div>
       </div>
 
@@ -325,8 +326,8 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
                       className={cn(
                         "w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3 border border-transparent",
                         activeChat?.id === chat.id && !isSelectMode
-                          ? "bg-indigo-500/10 border-indigo-500/20" 
-                          : "hover:bg-white/5"
+                          ? "bg-[var(--theme-accent)]/15 border-[var(--theme-accent)]/25 text-[var(--theme-accent)]" 
+                          : "hover:bg-white/5 text-slate-300"
                       )}
                     >
                       {chat.type === 'ai' ? (
@@ -346,15 +347,15 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
                       )}
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <div className="flex justify-between items-baseline mb-1">
-                          <h4 className="font-semibold text-sm truncate pr-2">{displayName || 'Unknown Chat'}</h4>
-                          <span className="text-[10px] text-slate-500 flex-shrink-0 uppercase">
+                          <h4 className="font-semibold text-sm truncate pr-2 theme-text-primary">{displayName || 'Unknown Chat'}</h4>
+                          <span className="text-[10px] theme-text-secondary opacity-60 flex-shrink-0 uppercase">
                             {chat.updatedAt ? formatDistanceToNow(chat.updatedAt, { addSuffix: true }) : ''}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <p className="text-xs text-slate-400 truncate pr-2">{chat.lastMessageContent || 'No messages yet'}</p>
+                          <p className="text-xs theme-text-secondary opacity-80 truncate pr-2">{chat.lastMessageContent || 'No messages yet'}</p>
                           {chat.unreadCounts?.[user.uid] > 0 && chat.id !== activeChat?.id && (
-                            <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                            <span className="bg-[var(--theme-accent)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 shadow-[0_0_8px_var(--theme-accent-glow)]">
                               {chat.unreadCounts[user.uid]}
                             </span>
                           )}
@@ -367,6 +368,34 @@ export function Sidebar({ user, activeChat, setActiveChat, onOpenSettings, aiPro
             )}
           </div>
         )}
+      </div>
+
+      {/* Theme Status Ticker & Settings Footer */}
+      <div className="p-4 border-t theme-border flex items-center justify-between theme-panel-bg bg-opacity-80 backdrop-blur-md">
+        <div className="flex items-center gap-2 overflow-hidden flex-1 mr-2">
+          <div className="w-2 h-2 rounded-full theme-accent-bg theme-accent-glow animate-pulse flex-shrink-0" />
+          <span className="text-[10px] font-bold tracking-wider uppercase truncate theme-accent-text select-none animate-pulse">
+            {({
+              'default-dark': '🔒 WORKSTATION SECURE',
+              'default-light': '🔓 WORKSTATION ACTIVE',
+              'money-heist': '💰 BELLA CIAO // VAULT: SECURE',
+              'spider-man': '🕸️ SPIDEY-SENSE: ACTIVE',
+              'marvel': '🪐 COSMIC DEFENSE: ONLINE',
+              'avengers': '🛡️ S.H.I.E.L.D. // AVENGERS INIT: ON',
+              'iron-man': '⚡ ARC REACTOR: 100% // MK-85',
+              'jarvis-hud': '🤖 JARVIS: ONLINE // SYSTEM: 100%',
+              'asur': '👁️ MYSTIC RUNES // ASUR EYE ACTIVE',
+              'house-of-the-dragon': '🐉 FIRE & BLOOD // DRAGONSTONE'
+            } as Record<string, string>)[themeId || 'default-dark'] || '🔒 WORKSTATION SECURE'}
+          </span>
+        </div>
+        <button 
+          onClick={onOpenSettings}
+          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors theme-accent-text"
+          title="Theme Selection"
+        >
+          <Settings className="w-4 h-4 animate-spin-slow" />
+        </button>
       </div>
     </div>
   );

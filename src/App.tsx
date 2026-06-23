@@ -13,7 +13,7 @@ export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
-  const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem('praxa-theme-color') || '#0A0A0C');
+  const [themeId, setThemeId] = useState<string>(() => localStorage.getItem('praxa-theme-id') || 'default-dark');
   const [customBg, setCustomBg] = useState<string>(() => localStorage.getItem('praxa-custom-bg') || '');
   
   const [aiProfilePic] = useState<string>('./praxa.ai.png');
@@ -23,8 +23,8 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('praxa-theme-color', themeColor);
-  }, [themeColor]);
+    localStorage.setItem('praxa-theme-id', themeId);
+  }, [themeId]);
 
   useEffect(() => {
     localStorage.setItem('praxa-custom-bg', customBg);
@@ -107,30 +107,92 @@ export default function App() {
     );
   }
 
+  const emberCount = 12;
+  const embersArray = Array.from({ length: emberCount });
+
   return (
     <div 
-      className={`flex h-screen w-full text-slate-200 overflow-hidden font-sans bg-cover bg-center ${themeColor === '#F8FAFC' && !customBg ? 'light-mode' : ''}`}
+      className={`flex h-screen w-full overflow-hidden font-sans bg-cover bg-center theme-${themeId} theme-bg theme-text-primary relative`}
       style={{ 
-        backgroundColor: customBg ? undefined : (themeColor === '#F8FAFC' ? '#0A0A0C' : themeColor),
-        backgroundImage: customBg ? `url(${customBg})` : undefined
+        backgroundImage: customBg ? `url(${customBg})` : undefined,
+        fontFamily: themeId === 'jarvis-hud' ? "'Courier New', monospace" : undefined
       }}
     >
-      <div className="absolute inset-0 bg-black/40 pointer-events-none z-0" />
+      {/* Background Dark Overlay */}
+      <div className="absolute inset-0 bg-black/45 pointer-events-none z-0" />
       
+      {/* Visual Identity Overlay Effects */}
+      {themeId === 'jarvis-hud' && (
+        <>
+          <div className="hud-scanline" />
+          <div className="hud-scanner" />
+        </>
+      )}
+      {themeId === 'avengers' && (
+        <>
+          <div className="hud-scanline" />
+          <div className="hud-scanner" style={{ animationDuration: '12s' }} />
+        </>
+      )}
+      {themeId === 'spider-man' && (
+        <div className="web-overlay" />
+      )}
+      {themeId === 'money-heist' && (
+        <>
+          <div className="laser-line" />
+          <div className="laser-line-2" />
+        </>
+      )}
+      {themeId === 'house-of-the-dragon' && (
+        <div className="dragonscale-overlay" />
+      )}
+      {(themeId === 'asur' || themeId === 'house-of-the-dragon') && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-1">
+          {embersArray.map((_, i) => (
+            <div 
+              key={i} 
+              className="ember-particle" 
+              style={{
+                '--dur': `${8 + (i % 5) * 2}s`,
+                '--delay': `${(i % 4) * -2.5}s`,
+                '--x': `${(i * 8.5) % 100}%`,
+              } as React.CSSProperties} 
+            />
+          ))}
+        </div>
+      )}
+
       <div className="flex h-full w-full z-10 relative">
         <div className={`w-full h-full lg:w-96 shrink-0 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
-          <Sidebar user={user} activeChat={activeChat} setActiveChat={setActiveChat} onOpenSettings={() => setIsSettingsOpen(true)} aiProfilePic={aiProfilePic} userProfilePic={userProfilePic} />
+          <Sidebar 
+            user={user} 
+            activeChat={activeChat} 
+            setActiveChat={setActiveChat} 
+            onOpenSettings={() => setIsSettingsOpen(true)} 
+            aiProfilePic={aiProfilePic} 
+            userProfilePic={userProfilePic} 
+            themeId={themeId} 
+          />
         </div>
         <div className={`flex-1 h-full min-w-0 ${activeChat ? 'flex' : 'hidden lg:flex'}`}>
-          <ChatArea user={user} activeChat={activeChat} setActiveChat={setActiveChat} aiProfilePic={aiProfilePic} aiBg={aiBg} userProfilePic={userProfilePic} customBg={customBg} />
+          <ChatArea 
+            user={user} 
+            activeChat={activeChat} 
+            setActiveChat={setActiveChat} 
+            aiProfilePic={aiProfilePic} 
+            aiBg={aiBg} 
+            userProfilePic={userProfilePic} 
+            customBg={customBg} 
+            themeId={themeId} 
+          />
         </div>
       </div>
 
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
-        themeColor={themeColor}
-        setThemeColor={setThemeColor}
+        themeId={themeId}
+        setThemeId={setThemeId}
         customBg={customBg}
         setCustomBg={setCustomBg}
         aiBg={aiBg}

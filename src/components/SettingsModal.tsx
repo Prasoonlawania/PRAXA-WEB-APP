@@ -4,8 +4,8 @@ import { X, Image as ImageIcon, Upload } from 'lucide-react';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  themeColor: string;
-  setThemeColor: (color: string) => void;
+  themeId: string;
+  setThemeId: (id: string) => void;
   customBg: string;
   setCustomBg: (url: string) => void;
   aiBg: string;
@@ -15,11 +15,19 @@ interface SettingsModalProps {
 }
 
 const THEMES = [
-  { name: 'Dark', color: '#0A0A0C' },
-  { name: 'Light', color: '#F8FAFC' },
+  { id: 'default-dark', name: 'Default Dark', desc: 'Workstation slate dark', color: '#0A0A0C', previewClass: 'from-slate-900 to-slate-800 border-indigo-500/20' },
+  { id: 'default-light', name: 'Default Light', desc: 'Workstation clean light', color: '#F8FAFC', previewClass: 'from-slate-100 to-white border-indigo-500/10 text-slate-900' },
+  { id: 'money-heist', name: 'Money Heist', desc: 'Crimson red & vault shadows', color: '#dc2626', previewClass: 'from-[#1a0808] to-[#0d0303] border-red-500/20' },
+  { id: 'spider-man', name: 'Spider-Man', desc: 'Rose red & spider webs', color: '#e11d48', previewClass: 'from-[#10050c] to-[#080205] border-rose-500/20' },
+  { id: 'marvel', name: 'Cosmic Marvel', desc: 'Crimson / purple galaxy', color: '#d946ef', previewClass: 'from-[#120220] to-[#080010] border-fuchsia-500/20' },
+  { id: 'avengers', name: 'Avengers HUD', desc: 'Cybermatic technical Navy', color: '#0ea5e9', previewClass: 'from-[#081628] to-[#030d1a] border-sky-500/20' },
+  { id: 'iron-man', name: 'Iron Man', desc: 'Stark hot-rod red & gold', color: '#eab308', previewClass: 'from-[#200407] to-[#140203] border-yellow-500/20' },
+  { id: 'jarvis-hud', name: 'JARVIS HUD', desc: 'Stark holographic cyan', color: '#06b6d4', previewClass: 'from-[#031520] to-[#010a10] border-cyan-500/20' },
+  { id: 'asur', name: 'Asur Mystic', desc: 'Smoking charcoal & ash', color: '#ea580c', previewClass: 'from-[#121212] to-[#090909] border-orange-500/20' },
+  { id: 'house-of-the-dragon', name: 'Dragonstone', desc: 'Ember & dragon scale', color: '#d97706', previewClass: 'from-[#120a07] to-[#070403] border-amber-600/20' },
 ];
 
-export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, customBg, setCustomBg, aiBg, setAiBg, userProfilePic, setUserProfilePic }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, themeId, setThemeId, customBg, setCustomBg, aiBg, setAiBg, userProfilePic, setUserProfilePic }: SettingsModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aiBgInputRef = useRef<HTMLInputElement>(null);
   const userPicInputRef = useRef<HTMLInputElement>(null);
@@ -70,9 +78,9 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#16161D] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0A0A0C]">
-          <h2 className="text-lg font-bold text-slate-200">Appearance Settings</h2>
+      <div className="bg-[#16161D] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 theme-panel-bg theme-border">
+        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0A0A0C] theme-bg theme-border">
+          <h2 className="text-lg font-bold text-slate-200 theme-text-primary">Appearance Settings</h2>
           <button 
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
@@ -84,20 +92,34 @@ export function SettingsModal({ isOpen, onClose, themeColor, setThemeColor, cust
         <div className="p-6 space-y-6">
           <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Color Theme</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {THEMES.map(theme => (
-                <button
-                  key={theme.name}
-                  onClick={() => {
-                    setThemeColor(theme.color);
-                    setCustomBg('');
-                  }}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${!customBg && themeColor === theme.color ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
-                >
-                  <div data-invert-ignore="true" className="w-6 h-6 rounded-full border border-white/20" style={{ backgroundColor: theme.color }} />
-                  <span className="text-sm font-medium text-slate-200">{theme.name}</span>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+              {THEMES.map(theme => {
+                const isActive = !customBg && themeId === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => {
+                      setThemeId(theme.id);
+                      setCustomBg('');
+                    }}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-xl border bg-gradient-to-br text-left transition-all ${theme.previewClass} ${
+                      isActive 
+                        ? 'border-[var(--theme-accent,#6366f1)] bg-[rgba(99,102,241,0.15)] ring-1 ring-[var(--theme-accent)] shadow-lg shadow-[var(--theme-accent-glow)]' 
+                        : 'border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <div 
+                        data-invert-ignore="true" 
+                        className="w-4.5 h-4.5 rounded-full border border-white/20 flex-shrink-0" 
+                        style={{ backgroundColor: theme.color }} 
+                      />
+                      <span className="text-sm font-bold text-slate-200 truncate">{theme.name}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 line-clamp-1">{theme.desc}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

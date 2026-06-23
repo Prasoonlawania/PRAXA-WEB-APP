@@ -1,18 +1,9 @@
 @import "tailwindcss";
 
 @layer utilities {
-  .light-mode {
-    filter: invert(1) hue-rotate(180deg);
-  }
-  .light-mode img,
-  .light-mode video,
-  .light-mode [data-invert-ignore] {
-    filter: invert(1) hue-rotate(180deg);
-  }
-
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #334155 transparent; /* slate-700 */
+    scrollbar-color: var(--theme-accent, #334155) transparent;
   }
   
   .custom-scrollbar::-webkit-scrollbar {
@@ -24,7 +15,337 @@
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #334155;
+    background-color: var(--theme-accent, #334155);
     border-radius: 20px;
   }
+}
+
+/* 10 Fandom Universe Themes Configuration */
+
+/* 1. Default Dark Theme */
+.theme-default-dark {
+  --theme-bg: #0A0A0C;
+  --theme-panel-bg: #16161D;
+  --theme-panel-bg-translucent: rgba(22, 22, 29, 0.85);
+  --theme-accent: #6366f1;
+  --theme-accent-hover: #4f46e5;
+  --theme-accent-glow: rgba(99, 102, 241, 0.4);
+  --theme-text-primary: #f8fafc;
+  --theme-text-secondary: #94a3b8;
+  --theme-border: rgba(255, 255, 255, 0.08);
+  --theme-message-sent: #4f46e5;
+  --theme-message-received: #27272a;
+  --theme-glow-accent-border: rgba(99, 102, 241, 0.2);
+}
+
+/* 2. Default Light Theme */
+.theme-default-light {
+  --theme-bg: #f8fafc;
+  --theme-panel-bg: #ffffff;
+  --theme-panel-bg-translucent: rgba(255, 255, 255, 0.9);
+  --theme-accent: #4f46e5;
+  --theme-accent-hover: #4338ca;
+  --theme-accent-glow: rgba(79, 70, 229, 0.2);
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #475569;
+  --theme-border: rgba(0, 0, 0, 0.08);
+  --theme-message-sent: #4f46e5;
+  --theme-message-received: #f1f5f9;
+  --theme-glow-accent-border: rgba(79, 70, 229, 0.1);
+}
+
+/* 3. Money Heist Theme */
+.theme-money-heist {
+  --theme-bg: #0d0303;
+  --theme-panel-bg: #180909;
+  --theme-panel-bg-translucent: rgba(24, 9, 9, 0.85);
+  --theme-accent: #dc2626;
+  --theme-accent-hover: #b91c1c;
+  --theme-accent-glow: rgba(220, 38, 38, 0.5);
+  --theme-text-primary: #fca5a5;
+  --theme-text-secondary: #ef4444;
+  --theme-border: rgba(220, 38, 38, 0.18);
+  --theme-message-sent: #dc2626;
+  --theme-message-received: #1e0d0d;
+  --theme-glow-accent-border: rgba(220, 38, 38, 0.35);
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+/* 4. Spider-Man Theme */
+.theme-spider-man {
+  --theme-bg: #080205;
+  --theme-panel-bg: #10050c;
+  --theme-panel-bg-translucent: rgba(16, 5, 12, 0.85);
+  --theme-accent: #e11d48;
+  --theme-accent-hover: #be123c;
+  --theme-accent-glow: rgba(225, 29, 72, 0.5);
+  --theme-text-primary: #fecdd3;
+  --theme-text-secondary: #fda4af;
+  --theme-border: rgba(225, 29, 72, 0.22);
+  --theme-message-sent: #e11d48;
+  --theme-message-received: #1e0a14;
+  --theme-glow-accent-border: rgba(225, 29, 72, 0.35);
+}
+
+/* 5. Marvel Theme */
+.theme-marvel {
+  --theme-bg: #080010;
+  --theme-panel-bg: #120220;
+  --theme-panel-bg-translucent: rgba(18, 2, 32, 0.85);
+  --theme-accent: #d946ef;
+  --theme-accent-hover: #c084fc;
+  --theme-accent-glow: rgba(217, 70, 239, 0.5);
+  --theme-text-primary: #fae8ff;
+  --theme-text-secondary: #d8b4fe;
+  --theme-border: rgba(217, 70, 239, 0.25);
+  --theme-message-sent: #c084fc;
+  --theme-message-received: #1e0530;
+  --theme-glow-accent-border: rgba(217, 70, 239, 0.35);
+}
+
+/* 6. Avengers Theme */
+.theme-avengers {
+  --theme-bg: #030d1a;
+  --theme-panel-bg: #081628;
+  --theme-panel-bg-translucent: rgba(8, 22, 40, 0.85);
+  --theme-accent: #0ea5e9;
+  --theme-accent-hover: #0284c7;
+  --theme-accent-glow: rgba(14, 165, 233, 0.5);
+  --theme-text-primary: #e0f2fe;
+  --theme-text-secondary: #38bdf8;
+  --theme-border: rgba(14, 165, 233, 0.22);
+  --theme-message-sent: #0284c7;
+  --theme-message-received: #0b1a2e;
+  --theme-glow-accent-border: rgba(14, 165, 233, 0.35);
+}
+
+/* 7. Iron Man Theme */
+.theme-iron-man {
+  --theme-bg: #140203;
+  --theme-panel-bg: #200407;
+  --theme-panel-bg-translucent: rgba(32, 4, 7, 0.85);
+  --theme-accent: #eab308;
+  --theme-accent-hover: #ca8a04;
+  --theme-accent-glow: rgba(234, 179, 8, 0.6);
+  --theme-text-primary: #fef08a;
+  --theme-text-secondary: #ef4444;
+  --theme-border: rgba(234, 179, 8, 0.25);
+  --theme-message-sent: #ef4444;
+  --theme-message-received: #320b0e;
+  --theme-glow-accent-border: rgba(234, 179, 8, 0.45);
+}
+
+/* 8. JARVIS HUD Theme */
+.theme-jarvis-hud {
+  --theme-bg: #010a10;
+  --theme-panel-bg: #031520;
+  --theme-panel-bg-translucent: rgba(3, 21, 32, 0.8);
+  --theme-accent: #06b6d4;
+  --theme-accent-hover: #0891b2;
+  --theme-accent-glow: rgba(6, 182, 212, 0.7);
+  --theme-text-primary: #ecfeff;
+  --theme-text-secondary: #22d3ee;
+  --theme-border: rgba(6, 182, 212, 0.3);
+  --theme-message-sent: #0891b2;
+  --theme-message-received: #051d2c;
+  --theme-glow-accent-border: rgba(6, 182, 212, 0.55);
+}
+
+/* 9. Asur Theme */
+.theme-asur {
+  --theme-bg: #090909;
+  --theme-panel-bg: #121212;
+  --theme-panel-bg-translucent: rgba(18, 18, 18, 0.85);
+  --theme-accent: #ea580c;
+  --theme-accent-hover: #c2410c;
+  --theme-accent-glow: rgba(234, 88, 12, 0.5);
+  --theme-text-primary: #ffedd5;
+  --theme-text-secondary: #f97316;
+  --theme-border: rgba(234, 88, 12, 0.2);
+  --theme-message-sent: #ea580c;
+  --theme-message-received: #1f1410;
+  --theme-glow-accent-border: rgba(234, 88, 12, 0.35);
+}
+
+/* 10. House of the Dragon Theme */
+.theme-house-of-the-dragon {
+  --theme-bg: #070403;
+  --theme-panel-bg: #120a07;
+  --theme-panel-bg-translucent: rgba(18, 10, 7, 0.85);
+  --theme-accent: #d97706;
+  --theme-accent-hover: #b45309;
+  --theme-accent-glow: rgba(217, 119, 6, 0.5);
+  --theme-text-primary: #fef3c7;
+  --theme-text-secondary: #fbbf24;
+  --theme-border: rgba(217, 119, 6, 0.22);
+  --theme-message-sent: #d97706;
+  --theme-message-received: #25140e;
+  --theme-glow-accent-border: rgba(217, 119, 6, 0.35);
+}
+
+/* Core Theme Utility Classes */
+.theme-bg {
+  background-color: var(--theme-bg) !important;
+}
+.theme-panel-bg {
+  background-color: var(--theme-panel-bg) !important;
+}
+.theme-panel-bg-translucent {
+  background-color: var(--theme-panel-bg-translucent) !important;
+  backdrop-filter: blur(12px);
+}
+.theme-text-primary {
+  color: var(--theme-text-primary) !important;
+}
+.theme-text-secondary {
+  color: var(--theme-text-secondary) !important;
+}
+.theme-border {
+  border-color: var(--theme-border) !important;
+}
+.theme-accent-bg {
+  background-color: var(--theme-accent) !important;
+}
+.theme-accent-bg-hover:hover {
+  background-color: var(--theme-accent-hover) !important;
+}
+.theme-accent-text {
+  color: var(--theme-accent) !important;
+}
+.theme-accent-border {
+  border-color: var(--theme-accent) !important;
+}
+.theme-accent-glow {
+  box-shadow: 0 0 15px var(--theme-accent-glow) !important;
+}
+.theme-message-sent-bg {
+  background-color: var(--theme-message-sent) !important;
+  color: #ffffff !important;
+}
+.theme-message-received-bg {
+  background-color: var(--theme-message-received) !important;
+  color: var(--theme-text-primary) !important;
+}
+.theme-glow-border {
+  border-color: var(--theme-glow-accent-border) !important;
+}
+
+/* Special Thematic Visual Overlays & Effects */
+
+/* Scanlines and scanner animations for JARVIS HUD / Avengers */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.hud-scanline {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(6, 182, 212, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hud-scanner {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--theme-accent);
+  box-shadow: 0 0 12px var(--theme-accent);
+  opacity: 0.25;
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Spider-Man Web Overlay (using elegant CSS shapes) */
+.web-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 50% 50%, transparent 15%, rgba(225, 29, 72, 0.02) 16%, transparent 17%),
+    radial-gradient(circle at 50% 50%, transparent 30%, rgba(225, 29, 72, 0.02) 31%, transparent 32%),
+    radial-gradient(circle at 50% 50%, transparent 50%, rgba(225, 29, 72, 0.02) 51%, transparent 52%),
+    linear-gradient(0deg, transparent 49.8%, rgba(225, 29, 72, 0.02) 50%, transparent 50.2%),
+    linear-gradient(90deg, transparent 49.8%, rgba(225, 29, 72, 0.02) 50%, transparent 50.2%),
+    linear-gradient(45deg, transparent 49.8%, rgba(225, 29, 72, 0.02) 50%, transparent 50.2%),
+    linear-gradient(-45deg, transparent 49.8%, rgba(225, 29, 72, 0.02) 50%, transparent 50.2%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Embers and Fire Particles for Asur & House of the Dragon */
+@keyframes float-embers {
+  0% { transform: translateY(105vh) translateX(0) scale(0.6); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(-5vh) translateX(40px) scale(1.1); opacity: 0; }
+}
+
+.ember-particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--theme-accent);
+  border-radius: 50%;
+  filter: blur(0.5px);
+  box-shadow: 0 0 8px var(--theme-accent);
+  animation: float-embers var(--dur, 10s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  left: var(--x, 10%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Money Heist Laser/Alarm scanning line */
+@keyframes laser-alarm {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.4; }
+}
+.laser-line {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--theme-accent);
+  box-shadow: 0 0 6px var(--theme-accent);
+  animation: laser-alarm 2s infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.laser-line-2 {
+  position: absolute;
+  top: 70%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--theme-accent);
+  box-shadow: 0 0 6px var(--theme-accent);
+  animation: laser-alarm 2.5s infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Draconic Dragonscale background overlay for House of the Dragon */
+.dragonscale-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: 
+    radial-gradient(circle at 100% 150%, transparent 24%, rgba(217, 119, 6, 0.8) 24%, rgba(217, 119, 6, 0.8) 28%, transparent 28%, transparent),
+    radial-gradient(circle at 0% 150%, transparent 24%, rgba(217, 119, 6, 0.8) 24%, rgba(217, 119, 6, 0.8) 28%, transparent 28%, transparent),
+    radial-gradient(circle at 50% 100%, transparent 19%, rgba(217, 119, 6, 0.8) 19%, rgba(217, 119, 6, 0.8) 23%, transparent 23%, transparent),
+    radial-gradient(circle at 100% 50%, transparent 19%, rgba(217, 119, 6, 0.8) 19%, rgba(217, 119, 6, 0.8) 23%, transparent 23%, transparent),
+    radial-gradient(circle at 0% 50%, transparent 19%, rgba(217, 119, 6, 0.8) 19%, rgba(217, 119, 6, 0.8) 23%, transparent 23%, transparent);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Spin animation for Settings gear in footer */
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
 }

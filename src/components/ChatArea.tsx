@@ -53,9 +53,10 @@ interface ChatAreaProps {
   aiBg?: string;
   userProfilePic?: string;
   customBg?: string;
+  themeId?: string;
 }
 
-export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, userProfilePic, customBg }: ChatAreaProps) {
+export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, userProfilePic, customBg, themeId }: ChatAreaProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [uploadingFile, setUploadingFile] = useState<File | null>(null);
@@ -490,17 +491,17 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-transparent relative overflow-hidden">
         {/* Abstract background blobs */}
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[var(--theme-accent,#6366f1)]/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[var(--theme-accent,#6366f1)]/5 rounded-full blur-3xl" />
 
-        <div className="z-10 bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/5 flex flex-col items-center max-w-sm text-center shadow-xl">
-          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-indigo-400 border border-white/10 shadow-inner">
+        <div className="z-10 bg-[var(--theme-panel-bg,#16161d)]/40 backdrop-blur-md p-6 rounded-2xl border theme-border flex flex-col items-center max-w-sm text-center shadow-xl">
+          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 theme-accent-text border theme-border shadow-inner">
             <Hash className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-slate-200 mb-2">
+          <h2 className="text-xl font-bold mb-2 theme-text-primary">
             Praxa for Web
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm theme-text-secondary opacity-85">
             Select a chat to start messaging.
           </p>
           <div className="mt-6 flex items-center gap-2 text-xs text-emerald-500 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10">
@@ -608,10 +609,10 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
       )}
 
       {/* Header */}
-      <div className="h-18 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-black/20 backdrop-blur-sm shrink-0 z-10">
+      <div className="h-18 border-b theme-border flex items-center justify-between px-4 lg:px-8 theme-panel-bg bg-opacity-70 backdrop-blur-sm shrink-0 z-10">
         <div className="flex items-center gap-3 lg:gap-4">
           <button 
-            className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-white"
+            className="lg:hidden p-2 -ml-2 theme-text-secondary hover:theme-text-primary"
             onClick={() => setActiveChat?.(null)}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m15 18-6-6 6-6"/></svg>
@@ -619,7 +620,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
           <div className="relative">
             {activeChat.type === 'ai' ? (
               aiProfilePic ? (
-                 <img src={aiProfilePic} alt="Praxa AI" className="w-10 h-10 rounded-full border border-white/10 object-cover" />
+                 <img src={aiProfilePic} alt="Praxa AI" className="w-10 h-10 rounded-full border theme-border object-cover" />
               ) : (
                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-white"><Bot className="w-5 h-5"/></div>
               )
@@ -627,7 +628,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
               <img
                 src={avatar}
                 alt=""
-                className="w-10 h-10 rounded-full border border-white/10 object-cover"
+                className="w-10 h-10 rounded-full border theme-border object-cover"
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
@@ -635,15 +636,15 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
               </div>
             )}
             {isOnline && activeChat.type !== 'ai' && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-indigo-500 border-2 border-[#0A0A0C] rounded-full animate-pulse" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 theme-accent-bg border-2 border-[var(--theme-bg,#0a0a0c)] rounded-full animate-pulse shadow-[0_0_6px_var(--theme-accent-glow)]" />
             )}
           </div>
           <div>
-            <h2 className="font-bold text-lg text-slate-200">
+            <h2 className="font-bold text-lg theme-text-primary">
               {displayName || "Unknown"}
             </h2>
             <div className="flex items-center gap-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs theme-text-secondary opacity-75">
                 {activeChat.type === "direct"
                   ? isOnline
                     ? "Online"
@@ -779,8 +780,8 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
                   className={cn(
                     "p-4 rounded-2xl shadow-sm text-sm leading-relaxed break-words relative group overflow-hidden",
                     isMine
-                      ? "bg-indigo-600 text-white rounded-tr-none"
-                      : "bg-white/5 border border-white/10 text-slate-300 rounded-tl-none",
+                      ? "theme-message-sent-bg text-white rounded-tr-none"
+                      : "theme-message-received-bg border theme-border rounded-tl-none",
                     msg.type !== "text" && "p-2", // Less padding for media
                     msg.starredBy?.includes(user.uid) && "ring-2 ring-yellow-500/50"
                   )}
@@ -836,7 +837,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 bg-black/20 rounded-xl hover:bg-black/30 transition-colors"
                     >
-                      <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-400">
+                      <div className="w-10 h-10 bg-[var(--theme-accent)]/20 rounded-lg flex items-center justify-center theme-accent-text">
                         <FileText className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -883,10 +884,10 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
       </div>
 
       {/* Input */}
-      <div className="p-6 border-t border-white/5 bg-black/20 backdrop-blur-sm shrink-0">
+      <div className="p-6 border-t theme-border theme-panel-bg bg-opacity-70 backdrop-blur-sm shrink-0">
         {uploadingFile && (
-          <div className="mb-4 bg-[#16161D] border border-white/10 rounded-xl p-3 flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-500/10 rounded-lg flex items-center justify-center text-indigo-400 shrink-0">
+          <div className="mb-4 theme-panel-bg border theme-border rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-[var(--theme-accent)]/10 rounded-lg flex items-center justify-center theme-accent-text shrink-0">
               {uploadingFile.type.startsWith("image/") ? (
                 <ImageIcon className="w-5 h-5" />
               ) : uploadingFile.type.startsWith("video/") ? (
@@ -899,7 +900,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-medium text-slate-200 truncate pr-4">
+                <p className="text-sm font-medium theme-text-primary truncate pr-4">
                   {uploadingFile.name}
                 </p>
                 <button
@@ -909,14 +910,14 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
                     setUploadProgress(0);
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
-                  className="text-slate-500 hover:text-white"
+                  className="theme-text-secondary hover:theme-text-primary"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                  className="h-full theme-accent-bg rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
@@ -925,7 +926,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
         )}
         <form
           onSubmit={handleSend}
-          className="flex items-end gap-2 bg-[#16161D] border border-white/10 rounded-2xl p-2 transition-colors focus-within:border-indigo-500/50"
+          className="flex items-end gap-2 theme-panel-bg border theme-border rounded-2xl p-2 transition-colors focus-within:border-[var(--theme-accent)]/55"
         >
           <input
             type="file"
@@ -936,25 +937,25 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-slate-400 hover:text-white transition-colors"
+            className="p-2 theme-text-secondary hover:theme-text-primary transition-colors"
           >
             <Paperclip className="w-6 h-6" />
           </button>
-
+ 
           <div className="flex-1 py-1">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Message Praxa..."
-              className="w-full bg-transparent border-none focus:outline-none text-slate-200 px-2 py-1.5 placeholder:text-slate-600 text-sm"
+              className="w-full bg-transparent border-none focus:outline-none theme-text-primary px-2 py-1.5 placeholder:theme-text-secondary placeholder:opacity-50 text-sm"
             />
           </div>
-
+ 
           <button
             type="submit"
             disabled={!inputText.trim()}
-            className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:hover:bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20"
+            className="p-2 theme-accent-bg text-white rounded-xl theme-accent-bg-hover transition-colors disabled:opacity-50 flex items-center justify-center shadow-lg shadow-[var(--theme-accent-glow)]"
           >
             <Send className="w-5 h-5 ml-1" />
           </button>
