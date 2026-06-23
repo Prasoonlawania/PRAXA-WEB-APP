@@ -5,7 +5,7 @@ import { auth, db, loginWithGoogle } from './lib/firebase';
 import { OperationType, handleFirestoreError } from './lib/utils';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
-import { Loader2, MessageSquare, Settings } from 'lucide-react';
+import { Loader2, MessageSquare, Settings, Lock, Mail, Shield } from 'lucide-react';
 import type { Chat } from './types';
 import { SettingsModal } from './components/SettingsModal';
 
@@ -76,18 +76,80 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0A0A0C] text-slate-200">
-        <div className="max-w-sm w-full p-8 bg-[#16161D] border border-white/5 rounded-3xl shadow-2xl flex flex-col items-center text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-[32px] flex items-center justify-center p-0.5 shadow-xl mb-6">
-            <div className="w-full h-full bg-[#16161D] rounded-[30px] flex items-center justify-center">
-              <MessageSquare className="h-8 w-8 text-indigo-400" />
+      <div className="relative flex h-screen w-full items-center justify-center bg-[#07070a] overflow-hidden text-slate-200">
+        {/* Floating Animated Gradient Background Blobs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[120px] animate-blob-1 pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/15 blur-[120px] animate-blob-2 pointer-events-none" />
+        <div className="absolute top-[30%] left-[40%] w-[350px] h-[350px] rounded-full bg-cyan-600/10 blur-[100px] animate-blob-3 pointer-events-none" />
+
+        {/* Background Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+
+        {/* Glassmorphic Login Card */}
+        <div className="max-w-md w-full mx-4 p-8 backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl shadow-2xl flex flex-col z-10 relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+          
+          {/* Glow highlight */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+
+          {/* Welcome / Logo header */}
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center p-[1px] shadow-lg mb-4 animate-pulse">
+              <div className="w-full h-full bg-[#0a0a0c] rounded-[15px] flex items-center justify-center">
+                <MessageSquare className="h-6 w-6 text-indigo-400" />
+              </div>
             </div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-1">Welcome to Praxa</h1>
+            <p className="text-slate-400 text-xs tracking-wider uppercase font-semibold">THE COMPLETE REAL-TIME MESSAGING PLATFORM</p>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Welcome to Praxa</h1>
-          <p className="text-slate-400 mb-8 text-sm leading-relaxed">The complete real-time messaging platform.</p>
+
+          {/* Form */}
+          <form onSubmit={(e) => { e.preventDefault(); loginWithGoogle(); }} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Email Address</label>
+              <div className="relative group">
+                <input 
+                  type="email" 
+                  placeholder="name@example.com"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/40 transition-all text-slate-200 placeholder:text-slate-600"
+                  required
+                />
+                <Mail className="w-4 h-4 absolute left-4 top-3.5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Password</label>
+              <div className="relative group">
+                <input 
+                  type="password" 
+                  placeholder="••••••••"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/40 transition-all text-slate-200 placeholder:text-slate-600"
+                  required
+                />
+                <Lock className="w-4 h-4 absolute left-4 top-3.5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] mt-2 text-sm cursor-pointer"
+            >
+              Sign In
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/5"></div>
+            </div>
+            <span className="relative px-3 bg-[#0c0c12] text-[10px] font-bold text-slate-500 uppercase tracking-widest z-1">OR CONTINUE WITH</span>
+          </div>
+
+          {/* Google Login button */}
           <button 
             onClick={loginWithGoogle}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-3 shadow-lg shadow-indigo-500/20"
+            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-white/5 active:scale-[0.98] cursor-pointer"
           >
             <div className="bg-white p-1 rounded-md">
               <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
@@ -99,9 +161,13 @@ export default function App() {
             </div>
             Continue with Google
           </button>
-          <p className="mt-8 text-xs text-slate-500 font-medium">
-            Signal Protocol encryption ready
-          </p>
+
+          {/* Security note */}
+          <div className="mt-8 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-semibold tracking-wider uppercase">
+            <Shield className="w-3.5 h-3.5 text-indigo-400" />
+            Signal Protocol Secure
+          </div>
+
         </div>
       </div>
     );

@@ -450,3 +450,25 @@
   z-index: 1;
 }
 
+/* Login Background Drift Blobs */
+@keyframes drift-blob-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, -80px) scale(1.15); }
+}
+@keyframes drift-blob-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-80px, 40px) scale(1.2); }
+}
+@keyframes drift-blob-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, -60px) scale(0.9); }
+}
+.animate-blob-1 {
+  animation: drift-blob-1 25s infinite alternate ease-in-out;
+}
+.animate-blob-2 {
+  animation: drift-blob-2 20s infinite alternate ease-in-out;
+}
+.animate-blob-3 {
+  animation: drift-blob-3 18s infinite alternate ease-in-out;
+}
