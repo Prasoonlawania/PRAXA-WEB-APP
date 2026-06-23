@@ -1,5 +1,18 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { X, Image as ImageIcon, Upload } from 'lucide-react';
+import { auth, db } from '../lib/firebase';
+import { deleteUser } from 'firebase/auth';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  deleteDoc,
+  updateDoc,
+  orderBy
+} from 'firebase/firestore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -31,6 +44,125 @@ export function SettingsModal({ isOpen, onClose, themeId, setThemeId, customBg, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aiBgInputRef = useRef<HTMLInputElement>(null);
   const userPicInputRef = useRef<HTMLInputElement>(null);
+
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDownloadData = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    setIsDownloading(true);
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      const profile = userSnap.exists() ? userSnap.data() : { uid: currentUser.uid, displayName: currentUser.displayName };
+
+      const chatsQuery = query(collection(db, 'chats'), where('participants', 'array-contains', currentUser.uid));
+      const chatsSnap = await getDocs(chatsQuery);
+      const chatsData: any[] = [];
+
+      for (const chatDoc of chatsSnap.docs) {
+        const chat = chatDoc.data();
+        const chatId = chatDoc.id;
+
+        const msgsQuery = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
+        const msgsSnap = await getDocs(msgsQuery);
+        const messages = msgsSnap.docs.map(m => ({ id: m.id, ...m.data() }));
+
+        chatsData.push({
+          ...chat,
+          id: chatId,
+          messages
+        });
+      }
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        profile,
+        chats: chatsData
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `praxa_data_${currentUser.uid}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (e: any) {
+      console.error("Error downloading data:", e);
+      alert(`Error exporting data: ${e.message}`);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    const confirmFirst = window.confirm(
+      "WARNING: This will permanently delete your account, including all your profile data, chats, and messages. This action CANNOT be undone.\n\nAre you sure you want to proceed?"
+    );
+    if (!confirmFirst) return;
+
+    const confirmSecond = window.confirm(
+      "Are you absolutely sure? Type 'DELETE' in the next prompt if you want to proceed."
+    );
+    if (!confirmSecond) return;
+
+    const typedText = window.prompt("Please type 'DELETE' to confirm account deletion:");
+    if (typedText !== 'DELETE') {
+      alert("Deletion cancelled. Input did not match 'DELETE'.");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const uid = currentUser.uid;
+
+      const chatsQuery = query(collection(db, 'chats'), where('participants', 'array-contains', uid));
+      const chatsSnap = await getDocs(chatsQuery);
+
+      for (const chatDoc of chatsSnap.docs) {
+        const chatId = chatDoc.id;
+
+        const msgsQuery = query(collection(db, 'chats', chatId, 'messages'), where('senderId', '==', uid));
+        const msgsSnap = await getDocs(msgsQuery);
+        const deleteMsgsPromises = msgsSnap.docs.map(m => deleteDoc(m.ref));
+        await Promise.all(deleteMsgsPromises);
+
+        const chatData = chatDoc.data();
+        if (chatData.type === 'direct' || chatData.participants.length <= 2) {
+          await deleteDoc(chatDoc.ref);
+        } else {
+          const newParticipants = chatData.participants.filter((p: string) => p !== uid);
+          await updateDoc(chatDoc.ref, {
+            participants: newParticipants
+          });
+        }
+      }
+
+      const userRef = doc(db, 'users', uid);
+      await deleteDoc(userRef);
+
+      await deleteUser(currentUser);
+      
+      alert("Your account and all associated data have been permanently deleted.");
+      window.location.reload();
+    } catch (e: any) {
+      console.error("Error during account deletion:", e);
+      if (e.code === 'auth/requires-recent-login') {
+        alert(
+          "For security reasons, this operation requires a recent login. Please sign out, sign back in, and try deleting your account again."
+        );
+      } else {
+        alert(`An error occurred while deleting your account: ${e.message}`);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const processImageUpload = (file: File, setter: (url: string) => void) => {
     if (file.type.startsWith('image/')) {
@@ -210,6 +342,39 @@ export function SettingsModal({ isOpen, onClose, themeId, setThemeId, customBg, 
                >
                 Enable
               </button>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Account & Data</h3>
+            <div className="flex flex-col gap-2 bg-white/5 border border-white/10 rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-sm text-slate-300 font-medium">Export Account Data</span>
+                  <span className="text-[10px] text-slate-500">Download your profile, chats, and messages</span>
+                </div>
+                <button
+                  onClick={handleDownloadData}
+                  disabled={isDownloading}
+                  className="px-4 py-1.5 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 font-medium rounded-lg text-sm transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isDownloading ? 'Downloading...' : 'Download JSON'}
+                </button>
+              </div>
+              <div className="border-t border-white/5 my-2" />
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-sm text-red-400 font-semibold">Delete Account</span>
+                  <span className="text-[10px] text-slate-500 max-w-[200px]">Permanently delete your profile, messages, and chats</span>
+                </div>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="px-4 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
 

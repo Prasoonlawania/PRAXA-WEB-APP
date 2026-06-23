@@ -51,6 +51,10 @@ service cloud.firestore {
         isValidUser(incoming()) &&
         incoming().uid == existing().uid &&
         incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() &&
+        isValidId(userId) &&
+        userId == request.auth.uid;
     }
 
     // Validation for Chat

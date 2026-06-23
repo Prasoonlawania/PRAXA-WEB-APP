@@ -368,6 +368,11 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
     let file = e.target.files?.[0];
     if (!file || !activeChat) return;
 
+    if (activeChat.type === 'ai') {
+      alert("Attachments are not supported in the AI Chat.");
+      return;
+    }
+
     // Warn user about very large files over 5GB (browser limit may hit first, but we handle it)
     if (file.size > 5 * 1024 * 1024 * 1024) {
       alert("File is too large! Maximum size is 5GB.");
@@ -381,17 +386,18 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
         file = await new Promise<File>((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
+            URL.revokeObjectURL(img.src);
             const canvas = document.createElement("canvas");
             let width = img.width;
             let height = img.height;
-            const maxDimension = 1280;
+            const maxDimension = 800;
 
             if (width > maxDimension || height > maxDimension) {
               if (width > height) {
-                height = Math.round((height *= maxDimension / width));
+                height = Math.round(height * (maxDimension / width));
                 width = maxDimension;
               } else {
-                width = Math.round((width *= maxDimension / height));
+                width = Math.round(width * (maxDimension / height));
                 height = maxDimension;
               }
             }
@@ -413,10 +419,13 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
                 }
               },
               "image/jpeg",
-              0.85
+              0.70
             );
           };
-          img.onerror = () => reject(new Error("Image load error"));
+          img.onerror = () => {
+            URL.revokeObjectURL(img.src);
+            reject(new Error("Image load error"));
+          };
           img.src = URL.createObjectURL(file!);
         });
       } catch (error) {
@@ -1058,8 +1067,10 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
           />
           <button
             type="button"
+            disabled={activeChat?.type === 'ai'}
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 theme-text-secondary hover:theme-text-primary transition-colors"
+            className="p-2 theme-text-secondary hover:theme-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title={activeChat?.type === 'ai' ? "Attachments not supported in AI Chat" : "Attach File"}
           >
             <Paperclip className="w-6 h-6" />
           </button>
