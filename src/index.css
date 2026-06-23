@@ -349,3 +349,104 @@
 .animate-spin-slow {
   animation: spin 8s linear infinite;
 }
+
+/* Fandom Overlays and Animations */
+
+/* 1. Spider-Man: Bobbing web spider */
+@keyframes spider-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(20px); }
+}
+.spidey-spider-anim {
+  animation: spider-bob 5s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+/* 2. Money Heist: Falling money notes */
+@keyframes fall-cash {
+  0% { transform: translateY(-40px) rotate(0deg) translateX(0); opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.7; }
+  100% { transform: translateY(105vh) rotate(320deg) translateX(30px); opacity: 0; }
+}
+.cash-bill {
+  position: absolute;
+  width: 14px;
+  height: 28px;
+  background-color: #22c55e;
+  border: 1.5px solid #14532d;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  animation: fall-cash var(--dur, 6s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  left: var(--x, 10%);
+  z-index: 1;
+}
+.cash-bill::before {
+  content: '€';
+  color: #14532d;
+  font-size: 7px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+/* 3. Iron Man Arc Reactor pulsing */
+@keyframes arc-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.12; filter: drop-shadow(0 0 10px var(--theme-accent)); }
+  50% { transform: scale(1.04); opacity: 0.24; filter: drop-shadow(0 0 25px var(--theme-accent)); }
+}
+.arc-reactor-glow {
+  animation: arc-pulse 3s ease-in-out infinite;
+}
+
+/* 4. JARVIS HUD and Avengers spinning HUD radars */
+@keyframes spin-clockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes spin-counter {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+.hud-spin-cw {
+  animation: spin-clockwise var(--dur, 25s) linear infinite;
+  transform-origin: center;
+}
+.hud-spin-ccw {
+  animation: spin-counter var(--dur, 20s) linear infinite;
+  transform-origin: center;
+}
+
+/* 5. Asur: Breathing eye & runic seals */
+@keyframes eye-breathe {
+  0%, 100% { opacity: 0.08; filter: drop-shadow(0 0 6px var(--theme-accent)); }
+  50% { opacity: 0.18; filter: drop-shadow(0 0 24px var(--theme-accent)); }
+}
+.asur-eye-breathe {
+  animation: eye-breathe 4s ease-in-out infinite;
+}
+
+/* 6. Marvel Cosmic twinkling stars */
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50% { opacity: 0.85; transform: scale(1.2); }
+}
+.cosmic-star {
+  position: absolute;
+  width: 2.5px;
+  height: 2.5px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 3px white;
+  animation: star-twinkle var(--dur, 4s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  left: var(--x, 10%);
+  top: var(--y, 10%);
+  pointer-events: none;
+  z-index: 1;
+}
+

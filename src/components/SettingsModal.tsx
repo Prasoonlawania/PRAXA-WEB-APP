@@ -78,8 +78,8 @@ export function SettingsModal({ isOpen, onClose, themeId, setThemeId, customBg, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#16161D] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 theme-panel-bg theme-border">
-        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0A0A0C] theme-bg theme-border">
+      <div className="bg-[#16161D] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 theme-panel-bg theme-border max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0A0A0C] theme-bg theme-border shrink-0">
           <h2 className="text-lg font-bold text-slate-200 theme-text-primary">Appearance Settings</h2>
           <button 
             onClick={onClose}
@@ -89,7 +89,7 @@ export function SettingsModal({ isOpen, onClose, themeId, setThemeId, customBg, 
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
           <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Color Theme</h3>
             <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">

@@ -45,6 +45,127 @@ import type { Chat, Message } from "../types";
 import { format } from "date-fns";
 import { VideoCall } from "./VideoCall";
 
+function ThemeVisuals({ themeId }: { themeId?: string }) {
+  if (!themeId) return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 flex items-center justify-center select-none">
+      {/* Spider-Man Overlays */}
+      {themeId === 'spider-man' && (
+        <>
+          <svg viewBox="0 0 100 100" className="w-56 h-56 opacity-[0.06] text-[var(--theme-accent)] fill-current">
+            <path d="M50 20c-1.5 0-3 1.5-3 3 0 .8.4 1.5 1 2-2 1.3-3.5 3.5-3.5 6 0 1.2.3 2.3.8 3.3-1.6 1.7-2.8 4-2.8 6.7 0 4 3 7.5 7 8v4c-6 1-10 6-10 12h2c0-5 3.5-9 8.5-10v5c-4 .7-7 4-7 8h2c0-3.5 2.5-6.5 6-7v9H49.5c-4 .5-7 3.5-7 7.5h2c0-3 2-5 5-5.5v5.5h1v-5.5c3 .5 5 2.5 5 5.5h2c0-4-3-7-7-7.5H51v-9c3.5.5 6 3.5 6 7h2c0-4-3-7.3-7-8v-5c5 1 8.5 5 8.5 10h2c0-6-4-11-10-12v-4c4-.5 7-4 7-8 0-2.7-1.2-5-2.8-6.7.5-1 .8-2.1.8-3.3 0-2.5-1.5-4.7-3.5-6 .6-.5 1-1.2 1-2 0-1.5-1.5-3-3-3z"/>
+          </svg>
+          <div className="absolute top-0 right-12 w-8 h-48 pointer-events-none z-1 flex flex-col items-center spidey-spider-anim">
+            <div className="w-[1px] h-32 bg-red-500/20" />
+            <svg viewBox="0 0 100 100" className="w-8 h-8 text-[var(--theme-accent)] fill-current">
+              <path d="M50 20c-1.5 0-3 1.5-3 3 0 .8.4 1.5 1 2-2 1.3-3.5 3.5-3.5 6 0 1.2.3 2.3.8 3.3-1.6 1.7-2.8 4-2.8 6.7 0 4 3 7.5 7 8v4c-6 1-10 6-10 12h2c0-5 3.5-9 8.5-10v5c-4 .7-7 4-7 8h2c0-3.5 2.5-6.5 6-7v9H49.5c-4 .5-7 3.5-7 7.5h2c0-3 2-5 5-5.5v5.5h1v-5.5c3 .5 5 2.5 5 5.5h2c0-4-3-7-7-7.5H51v-9c3.5.5 6 3.5 6 7h2c0-4-3-7.3-7-8v-5c5 1 8.5 5 8.5 10h2c0-6-4-11-10-12v-4c4-.5 7-4 7-8 0-2.7-1.2-5-2.8-6.7.5-1 .8-2.1.8-3.3 0-2.5-1.5-4.7-3.5-6 .6-.5 1-1.2 1-2 0-1.5-1.5-3-3-3z"/>
+            </svg>
+          </div>
+        </>
+      )}
+
+      {/* Money Heist Overlays */}
+      {themeId === 'money-heist' && (
+        <>
+          <svg viewBox="0 0 100 120" className="w-52 h-64 opacity-[0.05] text-[var(--theme-accent)] fill-current">
+            <path d="M50 10C25 10 15 35 15 60c0 20 15 45 35 50 20-5 35-30 35-50C85 35 75 10 50 10zm0 12c12 0 20 18 22 38H28c2-20 10-38 22-38zM24 72c3-4 10-5 14-2-2 3-5 5-8 5s-5-1-6-3zm52 0c-1-2-3-3-6-3s-6-2-8-5c4-3 11-2 14 2c0 2-1 3-1 6zm-26 8c-5 0-9-3-10-7h20c-1 4-5 7-10 7z"/>
+          </svg>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div 
+              key={i} 
+              className="cash-bill" 
+              style={{
+                '--dur': `${5 + (i % 4) * 1.5}s`,
+                '--delay': `${i * -0.8}s`,
+                '--x': `${(i * 9) % 95}%`,
+              } as React.CSSProperties} 
+            />
+          ))}
+        </>
+      )}
+
+      {/* Iron Man Overlays */}
+      {themeId === 'iron-man' && (
+        <div className="arc-reactor-glow flex items-center justify-center">
+          <svg viewBox="0 0 120 120" className="w-56 h-56 text-[var(--theme-accent)] fill-none stroke-current" strokeWidth="2.2">
+            <circle cx="60" cy="60" r="54" strokeDasharray="6 4" />
+            <circle cx="60" cy="60" r="44" />
+            <circle cx="60" cy="60" r="20" className="fill-current opacity-15" />
+            <circle cx="60" cy="60" r="10" className="fill-current opacity-30" />
+            <path d="M 60 6 L 60 114 M 6 60 L 114 60 M 21.8 21.8 L 98.2 98.2 M 21.8 98.2 L 98.2 21.8" opacity="0.3" />
+          </svg>
+        </div>
+      )}
+
+      {/* JARVIS HUD Overlays */}
+      {themeId === 'jarvis-hud' && (
+        <div className="relative w-64 h-64 flex items-center justify-center opacity-15">
+          <svg viewBox="0 0 100 100" className="w-full h-full text-cyan-400 fill-none stroke-current hud-spin-cw" style={{ '--dur': '30s' } as React.CSSProperties}>
+            <circle cx="50" cy="50" r="45" strokeWidth="1" strokeDasharray="5 3 2 4" />
+            <circle cx="50" cy="50" r="40" strokeWidth="0.5" strokeDasharray="20 5" />
+            <path d="M 50 2 L 50 15 M 50 85 L 50 98" strokeWidth="2" />
+          </svg>
+          <svg viewBox="0 0 100 100" className="absolute w-[80%] h-[80%] text-cyan-400 fill-none stroke-current hud-spin-ccw" style={{ '--dur': '20s' } as React.CSSProperties}>
+            <circle cx="50" cy="50" r="45" strokeWidth="1" strokeDasharray="15 8" />
+            <circle cx="50" cy="50" r="30" strokeWidth="1.5" strokeDasharray="2 2" />
+          </svg>
+        </div>
+      )}
+
+      {/* Avengers Overlays */}
+      {themeId === 'avengers' && (
+        <svg viewBox="0 0 120 120" className="w-64 h-64 opacity-[0.06] text-[var(--theme-accent)] fill-current">
+          <path d="M60 5C29.6 5 5 29.6 5 60s24.6 55 55 55c25.4 0 46.8-17.2 52.9-40.8H99.1C94.2 97.4 78.8 107 60 107 34 107 13 86 13 60S34 13 60 13c17.5 0 32.2 8.3 37.9 21.2h15.2C106.6 19.3 84.8 5 60 5z"/>
+          <path d="M72 30H56L22 90h15.5l8.5-17h25l5 17H92L72 30zM50 60l11-21 9 21H50z"/>
+        </svg>
+      )}
+
+      {/* House of the Dragon Overlays */}
+      {themeId === 'house-of-the-dragon' && (
+        <svg viewBox="0 0 100 100" className="w-60 h-60 opacity-[0.05] text-[var(--theme-accent)] fill-current">
+          <path d="M50 5c-3 0-6 2-7 5-1 3 .5 6 3.5 7.5C40 19 32 25 28 35c-2-1-4-1-5 1-1.5 2-1 5 1 7s5.5.5 6.5-2c2 5 6 9 11 12-2 4-5 7-9 8-3 .5-5 3-4.5 6s3.5 4 6.5 2.5c5-2.5 9-6.5 11-12 1 2 2 4.5 3 7.5-1 2-1.5 4.5-.5 6.5 1 2 4 2 5.5 0s1-4-.5-6c1-3 2.5-5.5 3.5-7.5 2 5.5 6 9.5 11 12 3 1.5 6 .5 6.5-2.5s-1.5-5.5-4.5-6c-4-1-7-4-9-8 5-3 9-7 11-12 1 2.5 4.5 4 6.5 2s2.5-5 1-7c-1-2-3-2-5-1-4-10-12-16-18.5-17.5 3-1.5 4.5-4.5 3.5-7.5-1-3-4-5-7-5z M50 25c5 0 9 4 9 9s-4 9-9 9-9-4-9-9 4-9 9-9z"/>
+        </svg>
+      )}
+
+      {/* Asur Overlays */}
+      {themeId === 'asur' && (
+        <div className="asur-eye-breathe">
+          <svg viewBox="0 0 100 100" className="w-52 h-52 text-[var(--theme-accent)] fill-none stroke-current" strokeWidth="2.5">
+            <path d="M 10 50 Q 50 15 90 50 Q 50 85 10 50 Z" />
+            <circle cx="50" cy="50" r="18" className="fill-current opacity-10" />
+            <circle cx="50" cy="50" r="8" className="fill-current" />
+            <path d="M 50 10 L 50 25 M 50 75 L 50 90 M 10 50 L 25 50 M 75 50 L 90 50" strokeWidth="1.5" strokeDasharray="3 3" />
+          </svg>
+        </div>
+      )}
+
+      {/* Cosmic Marvel Overlays */}
+      {themeId === 'marvel' && (
+        <>
+          <div className="flex flex-col items-center justify-center opacity-[0.06]">
+            <div className="border-4 border-current p-4 font-black tracking-tighter text-5xl uppercase text-[var(--theme-accent)] select-none">
+              MARVEL
+            </div>
+          </div>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div 
+              key={i} 
+              className="cosmic-star" 
+              style={{
+                '--dur': `${3 + (i % 3) * 1.5}s`,
+                '--delay': `${i * -1.2}s`,
+                '--x': `${(i * 13) % 95}%`,
+                '--y': `${(i * 7) % 90}%`,
+              } as React.CSSProperties} 
+            />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 interface ChatAreaProps {
   user: FirebaseUser;
   activeChat: Chat | null;
@@ -567,6 +688,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
   return (
     <div className="flex-1 flex flex-col relative min-w-0 bg-transparent" style={activeChat.type === 'ai' && aiBg ? { backgroundImage: `url(${aiBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
       {activeChat.type === 'ai' && aiBg && <div className="absolute inset-0 bg-black/60 pointer-events-none z-0" />}
+      <ThemeVisuals themeId={themeId} />
       {isInCall && (
         <VideoCall
           chatId={activeChat.id}
