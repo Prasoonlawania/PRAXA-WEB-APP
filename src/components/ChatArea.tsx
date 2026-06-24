@@ -563,7 +563,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
             parts: [{ text: msg.content }]
           }));
 
-        const res = await fetch(getApiUrl('/api/openai/chat'), {
+        const res = await fetch(getApiUrl('/api/gemini/chat'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: messageContent, history: historyPayload })
@@ -702,7 +702,7 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
     const chatHistory = messages.map(msg => `${msg.senderId === user.uid ? 'Me' : 'Them'}: ${msg.content || '[File/Image]'}`).join('\n');
     setIsAiLoading(true);
     try {
-      const res = await fetch(getApiUrl('/api/openai/summarize'), {
+      const res = await fetch(getApiUrl('/api/gemini/summarize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatHistory })

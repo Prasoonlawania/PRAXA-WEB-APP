@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
 async function startServer() {
   const app = express();
@@ -23,73 +23,54 @@ async function startServer() {
     }
   });
 
-  // API Route for OpenAI ChatGPT
-  app.post("/api/openai/chat", async (req, res) => {
+  // API Route for Gemini
+  app.post("/api/gemini/chat", async (req, res) => {
     try {
       const { message, history } = req.body;
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-      
-      const messages: any[] = [
-        {
-          role: "system",
-          content: "You are Praxa AI, a helpful and friendly AI assistant built into the Praxa app. Answer questions concisely."
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
         }
-      ];
-
-      if (history && Array.isArray(history)) {
-        history.forEach(item => {
-          messages.push({
-            role: item.role === 'model' ? 'assistant' : 'user',
-            content: item.parts?.[0]?.text || ""
-          });
-        });
-      }
-
-      messages.push({
-        role: "user",
-        content: message
       });
       
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: messages,
+      const chat = ai.chats.create({
+        model: "gemini-3.5-flash",
+        history: history,
+        config: {
+          systemInstruction: "You are Praxa AI, a helpful and friendly AI assistant built into the Praxa app. Answer questions concisely.",
+        },
       });
       
-      const reply = response.choices[0]?.message?.content || "Empty response from AI.";
-      res.json({ text: reply });
+      const response = await chat.sendMessage({ message: message });
+      
+      res.json({ text: response.text });
     } catch (e: any) {
-      console.error("OpenAI error:", e);
+      console.error(e);
       res.status(500).json({ error: e.message || "Failed to generate AI response." });
     }
   });
 
-  app.post("/api/openai/summarize", async (req, res) => {
+  app.post("/api/gemini/summarize", async (req, res) => {
     try {
       const { chatHistory } = req.body;
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
       });
       
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are Praxa AI. Summarize the provided chat history concisely in a few bullet points."
-          },
-          {
-            role: "user",
-            content: chatHistory
-          }
-        ],
+      const chat = ai.chats.create({
+        model: "gemini-3.5-flash",
+        config: {
+          systemInstruction: "You are Praxa AI. Summarize the provided chat history concisely in a few bullet points.",
+        },
       });
       
-      const summary = response.choices[0]?.message?.content || "Failed to generate summary.";
-      res.json({ summary });
+      const response = await chat.sendMessage({ message: chatHistory });
+      res.json({ summary: response.text });
     } catch (e: any) {
-      console.error("OpenAI error:", e);
+      console.error(e);
       res.status(500).json({ error: e.message || "Failed to summarize chat." });
     }
   });
