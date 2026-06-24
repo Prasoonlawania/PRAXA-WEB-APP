@@ -37,7 +37,7 @@ async function startServer() {
       });
       
       const chat = ai.chats.create({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         history: history,
         config: {
           systemInstruction: "You are Praxa AI, a helpful and friendly AI assistant built into the Praxa app. Answer questions concisely.",
@@ -61,7 +61,7 @@ async function startServer() {
       });
       
       const chat = ai.chats.create({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         config: {
           systemInstruction: "You are Praxa AI. Summarize the provided chat history concisely in a few bullet points.",
         },
