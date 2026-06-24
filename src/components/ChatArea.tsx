@@ -46,9 +46,14 @@ import { format } from "date-fns";
 import { VideoCall } from "./VideoCall";
 
 const getApiUrl = (path: string) => {
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    if (window.location.port !== '3000' && window.location.port !== '') {
-      return `http://localhost:3000${path}`;
+  if (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' || 
+    window.location.hostname.startsWith('192.168.') || 
+    window.location.hostname.startsWith('10.')
+  ) {
+    if (window.location.port !== '3000') {
+      return `${window.location.protocol}//${window.location.hostname}:3000${path}`;
     }
   }
   return path;
