@@ -559,7 +559,15 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: messageContent, history: historyPayload })
         });
-        const data = await res.json();
+        
+        const contentType = res.headers.get("content-type");
+        let data: any;
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(`Server returned non-JSON response: ${text.substring(0, 150)}`);
+        }
         
         if (!res.ok) {
           throw new Error(data.error || `Server returned status ${res.status}`);
@@ -690,21 +698,33 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatHistory })
       });
-      const data = await res.json();
+      
+      const contentType = res.headers.get("content-type");
+      let data: any;
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 150)}`);
+      }
+      
+      if (!res.ok) {
+        throw new Error(data.error || `Server returned status ${res.status}`);
+      }
       
       const aiMsg: Message = {
         id: crypto.randomUUID(),
         chatId: activeChat.id,
         senderId: 'praxa_ai', // Pseudo-sender so it appears distinct
-        content: `**Praxa AI Summary:**\n${data.summary || data.error}`,
+        content: `**Praxa AI Summary:**\n${data.summary}`,
         type: 'text',
         createdAt: Date.now()
       };
       // For summarize, we just add it to the local state so the user can see it! Or we could save it to firestore. Let's save it to firestore so everyone sees the summary!
       await setDoc(doc(db, "chats", activeChat.id, "messages", aiMsg.id), aiMsg);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to summarize chat.");
+      alert(`Failed to summarize chat: ${err.message || err}`);
     } finally {
       setIsAiLoading(false);
       setTimeout(scrollToBottom, 100);
