@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 async function startServer() {
   const app = express();
@@ -23,58 +23,73 @@ async function startServer() {
     }
   });
 
-  // API Route for Gemini
-  app.post("/api/gemini/chat", async (req, res) => {
+  // API Route for OpenAI ChatGPT
+  app.post("/api/openai/chat", async (req, res) => {
     try {
       const { message, history } = req.body;
-      const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      
+      const messages: any[] = [
+        {
+          role: "system",
+          content: "You are Praxa AI, a helpful and friendly AI assistant built into the Praxa app. Answer questions concisely."
         }
+      ];
+
+      if (history && Array.isArray(history)) {
+        history.forEach(item => {
+          messages.push({
+            role: item.role === 'model' ? 'assistant' : 'user',
+            content: item.parts?.[0]?.text || ""
+          });
+        });
+      }
+
+      messages.push({
+        role: "user",
+        content: message
       });
       
-      const chat = ai.chats.create({
-        model: "gemini-3.5-flash",
-        history: history,
-        config: {
-          systemInstruction: "You are Praxa AI, a helpful and friendly AI assistant built into the Praxa app. Answer questions concisely.",
-        },
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: messages,
       });
       
-      // We don't restore history here perfectly in this simple example 
-      // but we send the message. Ideally we'd set history on chat object but @google/genai syntax for history can differ.
-      // Easiest is to send the whole text or context if we want.
-      // But let's just send the message.
-      const response = await chat.sendMessage({ message: message });
-      
-      res.json({ text: response.text });
+      const reply = response.choices[0]?.message?.content || "Empty response from AI.";
+      res.json({ text: reply });
     } catch (e: any) {
-      console.error(e);
+      console.error("OpenAI error:", e);
       res.status(500).json({ error: e.message || "Failed to generate AI response." });
     }
   });
 
-  app.post("/api/gemini/summarize", async (req, res) => {
+  app.post("/api/openai/summarize", async (req, res) => {
     try {
       const { chatHistory } = req.body;
-      const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
       });
       
-      const chat = ai.chats.create({
-        model: "gemini-3.5-flash",
-        config: {
-          systemInstruction: "You are Praxa AI. Summarize the provided chat history concisely in a few bullet points.",
-        },
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are Praxa AI. Summarize the provided chat history concisely in a few bullet points."
+          },
+          {
+            role: "user",
+            content: chatHistory
+          }
+        ],
       });
       
-      const response = await chat.sendMessage({ message: chatHistory });
-      res.json({ summary: response.text });
+      const summary = response.choices[0]?.message?.content || "Failed to generate summary.";
+      res.json({ summary });
     } catch (e: any) {
-      console.error(e);
+      console.error("OpenAI error:", e);
       res.status(500).json({ error: e.message || "Failed to summarize chat." });
     }
   });
