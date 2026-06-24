@@ -46,6 +46,12 @@ import { format } from "date-fns";
 import { VideoCall } from "./VideoCall";
 
 const getApiUrl = (path: string) => {
+  // Use custom build-time API URL if defined (useful for GitHub Pages deployments)
+  const buildTimeApiUrl = import.meta.env.VITE_API_URL;
+  if (buildTimeApiUrl) {
+    return `${buildTimeApiUrl.replace(/\/$/, '')}${path}`;
+  }
+
   if (
     window.location.hostname === 'localhost' || 
     window.location.hostname === '127.0.0.1' || 
