@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -25,6 +26,7 @@ async function startServer() {
       
       const chat = ai.chats.create({
         model: "gemini-3.5-flash",
+        history: history,
         config: {
           systemInstruction: "You are Praxa AI, a helpful and friendly AI assistant built into the Praxa app. Answer questions concisely.",
         },

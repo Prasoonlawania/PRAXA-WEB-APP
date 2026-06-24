@@ -547,29 +547,46 @@ export function ChatArea({ user, activeChat, setActiveChat, aiProfilePic, aiBg, 
       setIsAiLoading(true);
       
       try {
+        const historyPayload = aiMessages
+          .filter(msg => msg.content && !msg.content.startsWith('Sorry,') && !msg.content.startsWith('Network or server error'))
+          .map(msg => ({
+            role: msg.senderId === user.uid ? 'user' : 'model',
+            parts: [{ text: msg.content }]
+          }));
+
         const res = await fetch('/api/gemini/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: messageContent })
+          body: JSON.stringify({ message: messageContent, history: historyPayload })
         });
         const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || `Server returned status ${res.status}`);
+        }
         
         const aiMsg: Message = {
           id: crypto.randomUUID(),
           chatId: activeChat.id,
           senderId: 'praxa_ai',
-          content: data.text || data.error || 'Sorry, I encountered an error.',
+          content: data.text || 'Sorry, I encountered an empty response.',
           type: 'text',
           createdAt: Date.now()
         };
         setAiMessages(prev => [...prev, aiMsg]);
-        setIsAiLoading(false);
-        setTimeout(scrollToBottom, 100);
-      } catch (err) {
+      } catch (err: any) {
+         console.error("AI chat error:", err);
          setAiMessages(prev => [...prev, {
-            id: crypto.randomUUID(), chatId: activeChat.id, senderId: 'praxa_ai', content: 'Network or server error.', type: 'text', createdAt: Date.now()
+            id: crypto.randomUUID(), 
+            chatId: activeChat.id, 
+            senderId: 'praxa_ai', 
+            content: `Sorry, I encountered an error: ${err.message || err}`, 
+            type: 'text', 
+            createdAt: Date.now()
          }]);
+      } finally {
          setIsAiLoading(false);
+         setTimeout(scrollToBottom, 100);
       }
       return;
     }
